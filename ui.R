@@ -11,7 +11,7 @@ navbarPage(theme="http://bootswatch.com/spacelab/bootstrap.css", inverse=TRUE,
                               column(6, sliderInput("yrs", "Years", min=period[1], max=period[2], value=period, step=1, sep="", width="100%"))
                             ),
                             selectInput("gcms", "GCM", choices=gcms, selected=gcms, multiple=TRUE, width="100%"),
-                            selectInput("regions", "Region", choices=regions, selected="AK", multiple=TRUE, width="100%"),
+                            selectInput("regions", "Region", choices=regions, selected="", multiple=TRUE, width="100%"),
                             selectInput("veg", "Vegetation", choices=veg, selected=veg, multiple=TRUE, width="100%"),
                             fluidRow(
                               column(6, selectInput("vars", "Variable", choices=variables, selected=variables[1], width="100%")),
@@ -26,7 +26,11 @@ navbarPage(theme="http://bootswatch.com/spacelab/bootstrap.css", inverse=TRUE,
                             )
                     ),
                     fluidRow(
-                      column(4, h4("Testing")),
+                      column(4,
+                        h4("Testing"),
+                        leafletOutput("Map", width="100%"),
+                        checkboxInput("flammable", "Show flammable region", TRUE, width="100%")
+                      ),
                       column(4, actionButton("btn_modal_data", "Data filter", class="btn-block")),
                       column(4, actionButton("btn_modal_settings", "Settings", class="btn-block"))
                     ),
