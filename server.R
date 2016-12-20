@@ -9,6 +9,8 @@ fmz <- readOGR("shapefiles/fmz_polygons.shp", verbose=FALSE)
 fmz <- subset(fmz, !REGION %in% c("TNF", "HNS"))
 flam <- readOGR("shapefiles/flam_polygon.shp", verbose=FALSE)
 
+source("utils.R", local=TRUE)
+
 shinyServer(function(input, output, session) {
   
   fmzsub <- reactive({
@@ -40,7 +42,7 @@ shinyServer(function(input, output, session) {
   
   observe({ # raster layers
     walk(fmz$REGION, ~leafletProxy("Map") %>%
-           addPolygons(data=subset(fmz, REGION==.x), stroke=TRUE, fillOpacity=0, weight=1, group="not_selected", layerId=.x))
+           addPolygons(data=subset(fmz, REGION==.x), stroke=TRUE, fillOpacity=0, weight=1, color="black", group="not_selected", layerId=.x))
   })
   
   observeEvent(input$regions, {
@@ -56,7 +58,6 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$Map_shape_click, { # update the map markers and view on map clicks
     p <- input$Map_shape_click
-    print(p)
     proxy <- leafletProxy("Map")
     if(substr(p$id, 1, 9)=="selected_"){
       proxy %>% removeShape(layerId=p$id)
@@ -81,9 +82,9 @@ shinyServer(function(input, output, session) {
   })
   
   dsub <- reactive({
-    filter(d, RCP %in% input$rcps & Model %in% input$gcms & Region %in% input$regions &
+    filter(d, GBM %in% input$gbms & RCP %in% input$rcps & Model %in% input$gcms & Region %in% input$regions &
              Var %in% input$vars & Vegetation %in% input$veg & Year >= input$yrs[1] & Year <= input$yrs[2]) %>%
-      select_(.dots=c("RCP", "Model", "Region", "Var", "Vegetation", "Year", input$stat))
+      select_(.dots=c("GBM", "RCP", "Model", "Region", "Var", "Vegetation", "Year", input$stat))
   })
   
   rv_plot1 <- reactiveValues(x=NULL, y=NULL, keeprows=rep(TRUE, nrow(isolate(dsub()))))
@@ -124,14 +125,21 @@ shinyServer(function(input, output, session) {
     rv_plot1$keeprows <- rep(TRUE, nrow(dsub()))
   })
   
+  colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
+  keep    <- reactive({ req(rv_plot1$keeprows); filter(dsub(), rv_plot1$keeprows) })
+  exclude <- reactive({ filter(dsub(), !rv_plot1$keeprows) })
+  colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(keep()[[colorby()]]))) })
+  
   output$plot1 <- renderPlot({
-    if(nrow(dsub())!=length(rv_plot1$keeprows)) return()
-    keep    <- filter(dsub(), rv_plot1$keeprows)
-    exclude <- filter(dsub(), !rv_plot1$keeprows)
+    if(nrow(dsub())==0 | nrow(dsub())!=length(rv_plot1$keeprows)) return()
     
-    ggplot(data=keep, aes_string("Year", input$stat, colour="Model")) + geom_point(size=3) +
-      geom_point(data=exclude, shape=21, fill=NA, color="black", alpha=0.25) +
-      coord_cartesian(xlim=rv_plot1$x, ylim=rv_plot1$y)
+    g <- ggplot(data=keep(), aes_string("Year", input$stat, colour=colorby())) + geom_point(size=3) +
+      geom_point(data=exclude(), shape=21, fill=NA, color="black", alpha=0.25) +
+      coord_cartesian(xlim=rv_plot1$x, ylim=rv_plot1$y) +
+      theme_bw(base_size = 14) #+ scale_x_continuous(expand = c(0,0)) + scale_y_continuous(expand=c(0,0.5))
+    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec())
+    if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=input$facet_scales)
+    g + tp_theme
   })
   
   output$info <- renderText({
@@ -153,10 +161,14 @@ shinyServer(function(input, output, session) {
     )
   })
   
-  output$info2 <- renderPrint({
-    if(is.null(input$plot1_brush)) nearPoints(dsub(), input$plot1_click, allRows=input$settings_allRows) else
-    brushedPoints(dsub(), input$plot1_brush, allRows=input$settings_allRows)
-    # nearPoints() also works with hover and dblclick events
+  output$Selected_obs <- DT::renderDataTable({
+    x <- if(is.null(input$plot1_brush)) nearPoints(dsub(), input$plot1_click, allRows=input$settings_allRows) else
+      brushedPoints(dsub(), input$plot1_brush, allRows=input$settings_allRows)
+    col <- if(input$colorby=="") "Var" else input$colorby
+    clrs <- tableRowColors(keep(), input$colorby, colorvec())
+    DT::datatable(x, options=list(
+      lengthMenu=list(c(5, 10, 25, - 1), c('5', '10', '25', 'All')), pageLength=5, searching=FALSE)) %>%
+        formatStyle(columns=col, backgroundColor=clrs, target='row')
   })
   
 })
