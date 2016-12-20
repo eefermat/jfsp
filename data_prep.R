@@ -17,18 +17,22 @@ veg.drop <- c("Barren lichen-moss", "Temperate Rainforest")
 lev <- c("Black Spruce", "White Spruce", "Deciduous", "Shrub Tundra", "Graminoid Tundra", "Wetland Tundra", "All")
 stats.drop <- paste0("-Pct_", c("05", 10, 25, 50, 75, 90, 95))
 d <- bind_rows(map2(d, rep(gbm, each=length(files)/2),
-                   ~select_(.x, .dots=stats.drop) %>% filter(!Vegetation %in% veg.drop & Year >= 2020) %>%
-                     mutate(Phase=.y, Model=ifelse(Model=="CCSM4", "NCAR-CCSM4", Model), Vegetation=factor(Vegetation, levels=lev)) %>%
+                   ~select_(.x, .dots=stats.drop) %>% filter(!Vegetation %in% veg.drop & Location!="AK" & Year >= 2020) %>%
+                     mutate(Phase=.y,
+                            Model=ifelse(Model=="CCSM4", "NCAR-CCSM4", Model),
+                            Vegetation=factor(Vegetation, levels=lev)) %>%
                      rename(GBM=Phase, RCP=Scenario, Region=Location))) %>%
-  arrange(GBM, Region, RCP, Model, Var, Vegetation, Year)
+  arrange(GBM, Region, RCP, Model, Var, Vegetation, Year) %>%
+  mutate(GBM=factor(GBM), Model=factor(Model), Region=factor(Region), Var=factor(Var))
 
 rcps <- c("4.5"="RCP 4.5", "6.0"="RCP 6.0", "8.5"="RCP 8.5")
-gcms <- sort(unique(d$Model))
-#regions <- c("Alaska"="AK", "CGF", "CRS", "DAS", "FAS", "GAD", "KKS", "MID", "MSS", "SWS", "TAD", "TAS", "UYD")
-regions <- c("CGF", "CRS", "DAS", "FAS", "GAD", "KKS", "MID", "MSS", "SWS", "TAD", "TAS", "UYD")
+gbms <- levels(d$GBM)
+gcms <- levels(d$Model)
+#regions <- c("CGF", "CRS", "DAS", "FAS", "GAD", "KKS", "MID", "MSS", "SWS", "TAD", "TAS", "UYD")
+regions <- levels(d$Region)
 veg <- levels(d$Vegetation)
 period <- range(d$Year)
-variables <- unique(d$Var)
+variables <- levels(d$Var)
 stats <- c("Mean", "SD", "Min", "Max")
 
-save(d, rcps, gcms, regions, veg, period, variables, stats, file="appData.RData")
+save(d, gbms, rcps, gcms, regions, veg, period, variables, stats, file="appData.RData")
