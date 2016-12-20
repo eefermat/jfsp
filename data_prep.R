@@ -24,7 +24,8 @@ d <- bind_rows(map2(d, rep(gbm, each=length(files)/2),
 
 rcps <- c("4.5"="RCP 4.5", "6.0"="RCP 6.0", "8.5"="RCP 8.5")
 gcms <- sort(unique(d$Model))
-regions <- c("Alaska"="AK", "CGF", "CRS", "DAS", "FAS", "GAD", "KKS", "MID", "MSS", "SWS", "TAD", "TAS", "UYD")
+#regions <- c("Alaska"="AK", "CGF", "CRS", "DAS", "FAS", "GAD", "KKS", "MID", "MSS", "SWS", "TAD", "TAS", "UYD")
+regions <- c("CGF", "CRS", "DAS", "FAS", "GAD", "KKS", "MID", "MSS", "SWS", "TAD", "TAS", "UYD")
 veg <- levels(d$Vegetation)
 period <- range(d$Year)
 variables <- unique(d$Var)
