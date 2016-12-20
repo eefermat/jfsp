@@ -126,7 +126,11 @@ shinyServer(function(input, output, session) {
   })
   
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
-  keep    <- reactive({ req(rv_plot1$keeprows); filter(dsub(), rv_plot1$keeprows) })
+  keep    <- reactive({
+    req(rv_plot1$keeprows)
+    if(length(rv_plot1$keeprows) != nrow(dsub())) return()
+    filter(dsub(), rv_plot1$keeprows)
+  })
   exclude <- reactive({ filter(dsub(), !rv_plot1$keeprows) })
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(keep()[[colorby()]]))) })
   
