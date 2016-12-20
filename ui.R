@@ -19,6 +19,10 @@ navbarPage(theme="http://bootswatch.com/spacelab/bootstrap.css", inverse=TRUE,
                             )
                     ),
                     bsModal("modal_settings", "Settings", "btn_modal_settings", size = "large",
+                            h4("Map display"),
+                            fluidRow(
+                              column(6, checkboxInput("flammable", "Show flammable region", TRUE, width="100%"))
+                            ),
                             h4("Plot interaction"),
                             fluidRow(
                               column(6, checkboxInput("settings_allRows", "Show all table rows on observation selection", FALSE, width="100%")),
@@ -26,16 +30,15 @@ navbarPage(theme="http://bootswatch.com/spacelab/bootstrap.css", inverse=TRUE,
                             )
                     ),
                     fluidRow(
-                      column(4,
-                        h4("Testing"),
-                        leafletOutput("Map", width="100%"),
-                        checkboxInput("flammable", "Show flammable region", TRUE, width="100%")
-                      ),
+                      column(4, h4("Testing")),
                       column(4, actionButton("btn_modal_data", "Data filter", class="btn-block")),
                       column(4, actionButton("btn_modal_settings", "Settings", class="btn-block"))
                     ),
-                    plotOutput("plot1", click="plot1_click", dblclick="plot1_dblclick", hover="plot1_hover",
-                                        brush=brushOpts(id="plot1_brush", resetOnNew=TRUE)),
+                    fluidRow(
+                      column(4, leafletOutput("Map", width="100%")),
+                      column(8, plotOutput("plot1", click="plot1_click", dblclick="plot1_dblclick", hover="plot1_hover",
+                                        brush=brushOpts(id="plot1_brush", resetOnNew=TRUE)))
+                    ),
                     br(),
                     fluidRow(
                       column(4, h4("Selected observations")),
