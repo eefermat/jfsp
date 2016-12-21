@@ -13,6 +13,8 @@ source("utils.R", local=TRUE)
 
 shinyServer(function(input, output, session) {
   
+  source("observers.R", local=TRUE)
+  
   fmzsub <- reactive({
     x <- input$regions
     if(is.null(x)) return()
@@ -27,58 +29,6 @@ shinyServer(function(input, output, session) {
   output$Map <- renderLeaflet({
     leaflet() %>% addTiles() %>% setView(lon, lat, 4) %>%
       addPolygons(data=flam, stroke=TRUE, fillOpacity=0.2, weight=1, color="red", group="flammable")
-  })
-  
-  #### Map-related observers ####
-  observeEvent(input$flammable, { # raster layers
-    proxy <- leafletProxy("Map")
-    if(!input$flammable){
-      proxy %>% hideGroup("flammable")
-    } else {
-      proxy %>% hideGroup("selected") %>% hideGroup("not_selected") %>%
-        showGroup("flammable") %>% showGroup("not_selected") %>% showGroup("selected")
-    }
-  })
-  
-  observe({ # raster layers
-    walk(fmz$REGION, ~leafletProxy("Map") %>%
-           addPolygons(data=subset(fmz, REGION==.x), stroke=TRUE, fillOpacity=0, weight=1, color="black", group="not_selected", layerId=.x))
-  })
-  
-  observeEvent(input$regions, {
-    input$Map_shape_click
-    x <- input$regions
-    proxy <- leafletProxy("Map")
-    not_selected <- setdiff(regions, x)
-    if(length(not_selected)) walk(not_selected, ~proxy %>% removeShape(layerId=paste0("selected_", .x)))
-    walk(x, ~proxy %>%
-           addPolygons(data=subset(fmz, REGION==.x),
-                       stroke = TRUE, fillOpacity=0.2, weight=1, group="selected", layerId=paste0("selected_", .x)))
-  }, ignoreNULL=FALSE)
-  
-  observeEvent(input$Map_shape_click, { # update the map markers and view on map clicks
-    p <- input$Map_shape_click
-    proxy <- leafletProxy("Map")
-    if(substr(p$id, 1, 9)=="selected_"){
-      proxy %>% removeShape(layerId=p$id)
-    } else {
-      proxy %>% addPolygons(data=subset(fmz, REGION==p$id),
-                            stroke=TRUE, fillOpacity=0.2, weight=1,
-                            group="selected", layerId=paste0("selected_", p$id))
-    }
-  })
-  
-  observeEvent(input$Map_shape_click, { # update the regions selectInput on map clicks
-    p <- input$Map_shape_click
-    x <- input$regions
-    p1 <- strsplit(p$id, "_")[[1]][2]
-    if(!is.null(p$id)){
-      if(is.na(p1) && (is.null(x) || !p$id %in% x)){
-        updateSelectInput(session, "regions", selected=c(x, p$id))
-      } else if(!is.na(p1) && p1 %in% x){
-        updateSelectInput(session, "regions", selected=x[x!=p1])
-      }
-    }
   })
   
   dsub <- reactive({
