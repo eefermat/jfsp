@@ -23,7 +23,7 @@ tableRowColors <- function(data, variable, colorvec){
   styleEqual(x, colorvec)
 }
 
-tp_theme <- theme(panel.grid.major = element_line(size = .5, color = "grey"),
+plottheme <- theme(panel.grid.major = element_line(size = .5, color = "grey"),
         plot.title=element_text(hjust=0.5),
         axis.line=element_line(size=.7, color="black"),
         axis.ticks.length=unit(0.35,"cm"),

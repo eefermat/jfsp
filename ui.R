@@ -53,33 +53,9 @@ dashboardPage(
               column(6, checkboxInput("settings_clickExclude", "Clicks exclude observations", FALSE, width="100%"))
             )
     ),
+    leafletOutput("Map", width="100%"),
     tabItems(
-      tabItem("main_plot",
-        fluidRow(
-          column(4, leafletOutput("Map", width="100%")),
-          column(8, plotOutput("plot1", click="plot1_click", dblclick="plot1_dblclick", hover="plot1_hover",
-                               brush=brushOpts(id="plot1_brush", resetOnNew=TRUE)))
-        ),
-        br(),
-        fluidRow(
-          column(4,
-            h4("Selected observations")
-          ),
-          column(4,
-            selectInput("colorby", "Color by", choices=groupby_vars, selected="", width="100%"),
-            actionButton("exclude_toggle", "Toggle points", class="btn-block")
-          ),
-          column(4,
-            selectInput("facetby", "Facet by", choices=groupby_vars, selected="", width="100%"),
-            actionButton("exclude_reset", "Reset", class="btn-block")
-          )
-        ),
-        br(),
-        fluidRow(
-          column(4, verbatimTextOutput("info")),
-          column(8, DT::dataTableOutput('Selected_obs'))
-        )
-      ),
+      dbmodUI(id="mod1", tab_name="main_plot"),
       tabItem("tab2",
               "Tab2 content"
       ),
