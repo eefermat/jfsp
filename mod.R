@@ -118,17 +118,17 @@ dbmod <- function(input, output, session, xdata, variable, stat, allRows, clickE
     
     if(nrow(x)==0) return(
       DT::datatable(x, options=list(
-      lengthMenu=list(c(5, 10, 25, - 1), c('5', '10', '25', 'All')), pageLength=5, searching=FALSE)) %>%
+      lengthMenu=list(c(5, 10, 25), c('5', '10', '25')), pageLength=5, searching=FALSE)) %>%
       formatStyle(columns="Var", backgroundColor="white", target='row')
     )
     
-    if(!"selected_" %in% names(x)) x <- mutate(keep(), selected_=TRUE)
+    if(!"selected_" %in% names(x)) x <- mutate(x, selected_=TRUE)
     x <- mutate(x, selected_=paste0(x[[input$colorby]], "_", x$selected_))
-    print(x)
     clrs <- tableRowColors(x, input$colorby, colorvec(), "25")
-print(clrs)
+    
     DT::datatable(x, options=list(
-      lengthMenu=list(c(5, 10, 25), c('5', '10', '25')), pageLength=5, searching=FALSE)) %>%
+      lengthMenu=list(c(5, 10, 25), c('5', '10', '25')), pageLength=5, searching=FALSE,
+      columnDefs=list(list(visible=FALSE, targets=ncol(x))))) %>%
       formatStyle(columns="selected_", backgroundColor=clrs, target='row')
   })
 
