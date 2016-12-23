@@ -30,10 +30,12 @@ dbmodUI <- function(id, tab_name){
   
 }
 
-dbmod <- function(input, output, session, xdata, rv_plot1, stat, allTableRows, settings_clickExclude){
+dbmod <- function(input, output, session, xdata, variable, stat, allRows, clickExclude){
   ns <- session$ns
   
   source("utils.R", local=TRUE)
+  
+  rv_plot1 <- reactiveValues(x=NULL, y=NULL, keeprows=rep(TRUE, nrow(isolate(xdata()))))
   
   observeEvent(input$plot1_dblclick, {
     brush <- input$plot1_brush
@@ -47,14 +49,12 @@ dbmod <- function(input, output, session, xdata, rv_plot1, stat, allTableRows, s
   })
   
   observeEvent(xdata(), {
-    print("observed")
     rv_plot1$keeprows <- rep(TRUE, nrow(xdata()))
-    print("updated, apparently")
   })
   
   # Toggle points that are clicked
   observeEvent(input$plot1_click, {
-    if(settings_clickExclude()){
+    if(clickExclude()){
       res <- nearPoints(xdata(), input$plot1_click, allRows=TRUE)
       rv_plot1$keeprows <- xor(rv_plot1$keeprows, res$selected_)
     } else {
@@ -83,8 +83,7 @@ dbmod <- function(input, output, session, xdata, rv_plot1, stat, allTableRows, s
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(keep()[[colorby()]]))) })
   
   output$plot1 <- renderPlot({
-    print(str(isolate(rv_plot1$keeprows)))
-    if(nrow(xdata())==0 | nrow(xdata())!=length(rv_plot1$keeprows)) return()
+    if(nrow(xdata())==0 | nrow(xdata())!=length(rv_plot1$keeprows) | xdata()$Var[1]!=variable) return()
     g <- ggplot(data=keep(), aes_string("Year", stat, colour=colorby())) + geom_point(size=3) +
       geom_point(data=exclude(), shape=21, fill=NA, color="black", alpha=0.25) +
       coord_cartesian(xlim=rv_plot1$x, ylim=rv_plot1$y) +
@@ -114,13 +113,23 @@ dbmod <- function(input, output, session, xdata, rv_plot1, stat, allTableRows, s
   })
   
   output$Selected_obs <- DT::renderDataTable({
-    x <- if(is.null(input$plot1_brush)) nearPoints(xdata(), input$plot1_click, allRows=allTableRows) else
-      brushedPoints(xdata(), input$plot1_brush, allRows=allTableRows)
-    col <- if(input$colorby=="") "Var" else input$colorby
-    clrs <- tableRowColors(keep(), input$colorby, colorvec())
-    DT::datatable(x, options=list(
+    x <- if(is.null(input$plot1_brush)) nearPoints(xdata(), input$plot1_click, allRows=allRows()) else
+      brushedPoints(xdata(), input$plot1_brush, allRows=allRows())
+    
+    if(nrow(x)==0) return(
+      DT::datatable(x, options=list(
       lengthMenu=list(c(5, 10, 25, - 1), c('5', '10', '25', 'All')), pageLength=5, searching=FALSE)) %>%
-      formatStyle(columns=col, backgroundColor=clrs, target='row')
+      formatStyle(columns="Var", backgroundColor="white", target='row')
+    )
+    
+    if(!"selected_" %in% names(x)) x <- mutate(keep(), selected_=TRUE)
+    x <- mutate(x, selected_=paste0(x[[input$colorby]], "_", x$selected_))
+    print(x)
+    clrs <- tableRowColors(x, input$colorby, colorvec(), "25")
+print(clrs)
+    DT::datatable(x, options=list(
+      lengthMenu=list(c(5, 10, 25), c('5', '10', '25')), pageLength=5, searching=FALSE)) %>%
+      formatStyle(columns="selected_", backgroundColor=clrs, target='row')
   })
-  #out
+
 }
