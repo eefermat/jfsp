@@ -12,20 +12,23 @@ dashboardPage(
           style=action_btn_style, class="btn-flat action-button btn-block")
       )
     ),
-    selectInput("gcms2", "GCM", choices=gcms, selected=gcms, multiple=TRUE, width="100%"),
     sidebarMenu(
       id="tabs",
-      menuItem("Plot", tabName="main_plot", icon=icon("dashboard")),
-      menuItem("Tab2", icon = icon("th"), tabName="tab2", badgeLabel="new",
-               badgeColor="green"),
-      menuItem("Tab3", icon = icon("bar-chart-o"),
-               menuSubItem("Sub-item 1", tabName="subitem1"),
-               menuSubItem("Sub-item 2", tabName="subitem2")
+      #menuItem("Data", icon=icon("th"), tabName="data"),
+      menuItem("Fire", icon=icon("dashboard"),
+        menuSubItem("Burn area", tabName="burnarea"),
+        menuSubItem("Fire count", tabName="firefreq"),
+        menuSubItem("Fire size", tabName="firesize")
+      ),
+      menuItem("Vegetation", icon=icon("dashboard"),
+        menuSubItem("Cover area", tabName="vegarea"),
+        menuSubItem("Stand age", tabName="vegage")
       )
     )
   ),
   dashboardBody(
     bsModal("modal_data", "Data filter", "btn_modal_data", size = "large",
+            leafletOutput("Map", width="100%"),
             fluidRow(
               column(3, selectInput("gbms", "GBM", choices=gbms, selected=gbms, multiple=TRUE, width="100%")),
               column(3, selectInput("rcps", "RCP", choices=rcps, selected=rcps, multiple=TRUE, width="100%")),
@@ -35,7 +38,6 @@ dashboardPage(
             selectInput("regions", "Region", choices=regions, selected="", multiple=TRUE, width="100%"),
             selectInput("veg", "Vegetation", choices=veg, selected=veg, multiple=TRUE, width="100%"),
             fluidRow(
-              column(6, selectInput("vars", "Variable", choices=variables, selected=variables[1], width="100%")),
               column(6, selectInput("stat", "Stat", choices=stats, selected="Mean", width="100%"))
             )
     ),
@@ -53,9 +55,13 @@ dashboardPage(
               column(6, checkboxInput("settings_clickExclude", "Clicks exclude observations", FALSE, width="100%"))
             )
     ),
-    leafletOutput("Map", width="100%"),
+    #leafletOutput("Map", width="100%"),
     tabItems(
-      dbmodUI(id="mod1", tab_name="main_plot"),
+      dbmodUI(id="mod1_burnarea", tab_name="burnarea"),
+      dbmodUI(id="mod1_firefreq", tab_name="firefreq"),
+      dbmodUI(id="mod1_firesize", tab_name="firesize"),
+      dbmodUI(id="mod1_vegarea", tab_name="vegarea"),
+      dbmodUI(id="mod1_vegage", tab_name="vegage"),
       tabItem("tab2",
               "Tab2 content"
       ),
