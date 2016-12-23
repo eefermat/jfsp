@@ -17,6 +17,7 @@ tolpal <- function(n){
 }
 
 tableRowColors <- function(data, variable, colorvec, alpha_append=NULL, append_selected=FALSE){
+  if(!"selected_" %in% names(data)) stop("This function requires a special data table (DT package)  containing a 'selected_' column.")
   if(is.null(colorvec)) return("#FFFFFF")
   x <- sort(unique(data[[variable]]))
   if(length(x)!=length(colorvec)) return("#FFFFFF")
