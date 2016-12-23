@@ -16,10 +16,24 @@ tolpal <- function(n){
   )
 }
 
-tableRowColors <- function(data, variable, colorvec){
-  if(is.null(colorvec)) return("white")
+tableRowColors <- function(data, variable, colorvec, alpha_append=NULL, append_selected=FALSE){
+  if(is.null(colorvec)) return("#FFFFFF")
   x <- sort(unique(data[[variable]]))
-  if(length(x)!=length(colorvec)) return("white")
+  if(length(x)!=length(colorvec)) return("#FFFFFF")
+  
+  if(length(x)==1 && x==""){ # no coloring
+    x <- c("_TRUE", "_FALSE")
+    #if(any(data$selected_=="FALSE")){
+      colorvec <- c("#CCCCCC", "#FFFFFF")
+    #} else {
+    #  colorvec <- "#FFFFFF"
+    #}
+  } else { # coloring
+    x <- c(paste0(x, "_", TRUE), paste0(x, "_", FALSE))
+    colorvec2 <- if(is.null(alpha_append)) colorvec else paste0(colorvec, alpha_append)
+    colorvec <- if(append_selected) rep(colorvec2, 2) else c(colorvec, colorvec2)
+  }
+  
   styleEqual(x, colorvec)
 }
 
