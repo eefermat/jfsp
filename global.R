@@ -1,6 +1,6 @@
+library(leaflet)
 library(shiny)
 library(shinyBS)
-library(leaflet)
 library(shinydashboard)
 library(DT)
 load("appData.RData")
