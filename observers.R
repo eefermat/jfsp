@@ -1,12 +1,4 @@
 # Map-related observers
-
-# initial addition of background polygon region outlines after map is created
-observe({
-  walk(fmz$REGION, ~leafletProxy("Map") %>%
-         addPolygons(data=subset(fmz, REGION==.x), stroke=TRUE, fillOpacity=0, weight=1, color="black", group="not_selected", layerId=.x, label=.x,
-                     highlightOptions=highlightOptions(opacity=1, weight=2, fillOpacity=0, bringToFront=FALSE, sendToBack=FALSE)))
-})
-
 # observe if show/hide flammability mask is checked
 observeEvent(input$flammable, {
   proxy <- leafletProxy("Map")
