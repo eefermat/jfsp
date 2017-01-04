@@ -37,6 +37,8 @@ shinyServer(function(input, output, session) {
   dsub <- reactive({ filter(d1(), Var==selected_var()) })
 
   map(tab_ids, ~callModule(dbmod, paste0("mod1_", .x), xdata=dsub, variable=selected_var(), stat=input$stat,
-                           allRows=reactive(input$settings_allRows), clickExclude=reactive(input$settings_clickExclude)))
+                           allRows=reactive(input$settings_allRows), clickExclude=reactive(input$settings_clickExclude),
+                           alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
+                           jitterPoints=reactive(input$settings_jitterPoints)))
   
 })
