@@ -16,23 +16,20 @@ tolpal <- function(n){
   )
 }
 
-tableRowColors <- function(data, variable, colorvec, alpha_append=NULL, append_selected=FALSE){
-  if(!"selected_" %in% names(data)) stop("This function requires a special data table (DT package)  containing a 'selected_' column.")
-  if(is.null(colorvec)) return("#FFFFFF")
+tableRowColors <- function(data, variable, colorvec, alpha_append=NULL){
+  if(!"included_" %in% names(data)) stop("This function requires a special data table (DT package)  containing a 'included_' column.")
+  if(ncol(data)==0 || !any(data$included_=="_TRUE")) return("#FFFFFF")
+  if(!any(data$included_=="_FALSE")) return("#CCCCCC")
   x <- sort(unique(data[[variable]]))
-  if(length(x)!=length(colorvec)) return("#FFFFFF")
   
-  if(length(x)==1 && x==""){ # no coloring
+  if(is.null(colorvec) || (length(x)==1 && x=="") || 
+    (!is.null(colorvec) && length(x)!=length(colorvec))){ # no coloring
     x <- c("_TRUE", "_FALSE")
-    #if(any(data$selected_=="FALSE")){
-      colorvec <- c("#CCCCCC", "#FFFFFF")
-    #} else {
-    #  colorvec <- "#FFFFFF"
-    #}
+    colorvec <- c("#CCCCCC", "#FFFFFF")
   } else { # coloring
     x <- c(paste0(x, "_", TRUE), paste0(x, "_", FALSE))
     colorvec2 <- if(is.null(alpha_append)) colorvec else paste0(colorvec, alpha_append)
-    colorvec <- if(append_selected) rep(colorvec2, 2) else c(colorvec, colorvec2)
+    colorvec <- c(colorvec, colorvec2)
   }
   
   styleEqual(x, colorvec)
