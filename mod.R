@@ -12,25 +12,24 @@ dbmodUI <- function(id, tab_name){
         column(4,
                h4("Selected observations")
         ),
-        column(4,
-               selectInput(ns("colorby"), "Color by", choices=groupby_vars, selected="", width="100%"),
-               actionButton(ns("exclude_toggle"), "Toggle points", class="btn-block")
+        column(2,
+               selectizeInput(ns("colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
+               checkboxInput("cumulative", "Cumulative total", FALSE, width="100%")
         ),
-        column(4,
-               selectInput(ns("facetby"), "Facet by", choices=groupby_vars, selected="", width="100%"),
-               actionButton(ns("exclude_reset"), "Reset", class="btn-block")
-        )
+        column(2, selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...'))),
+        column(2, actionButton(ns("exclude_toggle"), "Toggle points", class="btn-block")),
+        column(2, actionButton(ns("exclude_reset"), "Reset", class="btn-block"))
       ),
       br(),
       fluidRow(
-        column(4, verbatimTextOutput(ns("info"))),
-        column(8, DT::dataTableOutput(ns('Selected_obs')))
+        column(6, verbatimTextOutput(ns("info"))),
+        column(6, div(DT::dataTableOutput(ns('Selected_obs')), style = "font-size: 75%"))
       )
     )
   
 }
 
-dbmod <- function(input, output, session, xdata, variable, stat, allRows, clickExclude){
+dbmod <- function(input, output, session, xdata, variable, stat, allRows, clickExclude, alpha, showLines, jitterPoints){
   ns <- session$ns
   
   source("utils.R", local=TRUE)
@@ -84,10 +83,15 @@ dbmod <- function(input, output, session, xdata, variable, stat, allRows, clickE
   
   output$plot1 <- renderPlot({
     if(nrow(xdata())==0 | nrow(xdata())!=length(rv_plot1$keeprows) | xdata()$Var[1]!=variable) return()
-    g <- ggplot(data=keep(), aes_string("Year", stat, colour=colorby())) + geom_point(size=3) +
+    if(jitterPoints()) pos <- position_jitter(w=0.2, h=0) else pos <- "identity"
+    
+    g <- ggplot(data=keep(), aes_string("Year", stat, colour=colorby())) 
+    if(showLines()) g <- g + geom_line(aes(group=interaction(GBM, RCP, Model, Region, Var, Vegetation)), alpha=alpha())
+    
+    g <- g + geom_point(size=3, alpha=alpha(), position=pos) +
       geom_point(data=exclude(), shape=21, fill=NA, color="black", alpha=0.25) +
-      coord_cartesian(xlim=rv_plot1$x, ylim=rv_plot1$y) +
-      theme_bw(base_size = 14) #+ scale_x_continuous(expand = c(0,0)) + scale_y_continuous(expand=c(0,0.5))
+      coord_cartesian(xlim=rv_plot1$x, ylim=rv_plot1$y) + theme_bw(base_size = 14)
+    
     if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec())
     if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=input$facet_scales)
     g + plottheme
@@ -118,7 +122,7 @@ dbmod <- function(input, output, session, xdata, variable, stat, allRows, clickE
     
     if(nrow(x)==0) return(
       DT::datatable(x, options=list(
-      lengthMenu=list(c(5, 10, 25), c('5', '10', '25')), pageLength=5, searching=FALSE)) %>%
+      lengthMenu=list(c(5, 10, 25), c('5', '10', '25')), pageLength=5, emptyTable="No observations selected in plot", searching=FALSE)) %>%
       formatStyle(columns="Var", backgroundColor="white", target='row')
     )
     
