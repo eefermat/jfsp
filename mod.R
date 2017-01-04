@@ -14,7 +14,7 @@ dbmodUI <- function(id, tab_name){
         ),
         column(2,
                selectizeInput(ns("colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
-               checkboxInput("cumulative", "Cumulative total", FALSE, width="100%")
+               checkboxInput(ns("cumulative"), "Cumulative total", FALSE, width="100%")
         ),
         column(2, selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...'))),
         column(2, actionButton(ns("exclude_toggle"), "Toggle points", class="btn-block")),
