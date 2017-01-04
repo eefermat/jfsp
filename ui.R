@@ -52,11 +52,6 @@ dashboardPage(
               column(3, sliderInput("settings_alpha", "Semi-transparency", min=0.1, max=1, value=1, step=0.1, sep="", width="100%")),
               column(3, checkboxInput("settings_showLines", "Connect points with lines", FALSE, width="100%")),
               column(3, checkboxInput("settings_jitterPoints", "Jitter points", FALSE, width="100%"))
-            ),
-            h4("Plot interaction"),
-            fluidRow(
-              column(6, checkboxInput("settings_allRows", "Show all table rows on observation selection", FALSE, width="100%")),
-              column(6, checkboxInput("settings_clickExclude", "Clicks exclude observations", FALSE, width="100%"))
             )
     ),
     #leafletOutput("Map", width="100%"),
