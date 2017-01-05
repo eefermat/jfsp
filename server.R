@@ -35,7 +35,7 @@ shinyServer(function(input, output, session) {
     switch(input$tabs, "burnarea"="Burn Area", "firefreq"="Fire Count", "firesize"="Fire Size", "vegarea"="Vegetated Area", "vegage"="Vegetation Age")
   })
   
-  dsub <- reactive({ filter(d1(), Var==selected_var()) })
+  dsub <- reactive({ filter(d1(), Var==selected_var()) %>% droplevels })
 
   map(tab_ids, ~callModule(dbmod, paste0("mod1_", .x), xdata=dsub, variable=selected_var(), stat=input$stat,
                            alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
