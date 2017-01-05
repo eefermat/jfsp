@@ -17,21 +17,19 @@ tolpal <- function(n){
 }
 
 tableRowColors <- function(data, variable, colorvec, alpha_append=NULL){
-  if(!"included_" %in% names(data)) stop("This function requires a special data table (DT package)  containing a 'included_' column.")
-  if(ncol(data)==0 || !any(data$included_=="_TRUE")) return("#FFFFFF")
-  if(!any(data$included_=="_FALSE")) return("#CCCCCC")
-  x <- sort(unique(data[[variable]]))
-  
-  if(is.null(colorvec) || (length(x)==1 && x=="") || 
-    (!is.null(colorvec) && length(x)!=length(colorvec))){ # no coloring
+  if(!"included_" %in% names(data))
+    stop("This function requires a special data table (DT package) containing an 'included_' column.")
+  x <- if(variable %in% names(data) && nrow(data)!=0) sort(unique(data[[variable]])) else ""
+
+  if(is.null(colorvec) || (length(x)==1 && x=="")){ # no coloring
     x <- c("_TRUE", "_FALSE")
     colorvec <- c("#CCCCCC", "#FFFFFF")
   } else { # coloring
+    colorvec <- colorvec[as.numeric(x)]
     x <- c(paste0(x, "_", TRUE), paste0(x, "_", FALSE))
     colorvec2 <- if(is.null(alpha_append)) colorvec else paste0(colorvec, alpha_append)
     colorvec <- c(colorvec, colorvec2)
   }
-  
   styleEqual(x, colorvec)
 }
 
