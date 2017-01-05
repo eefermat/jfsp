@@ -3,6 +3,7 @@ library(purrr)
 library(ggplot2)
 
 gbm <- c("3m", "5m")
+rcp <- c("RCP 4.5", "RCP 6.0", "RCP 8.5")
 files <- unlist(map(gbm, ~list.files(file.path("CMIP5_Statewide", .x, "stats"),
                                         pattern="projected_.*.RData", full.names=TRUE, recursive=TRUE)))
 
@@ -22,10 +23,10 @@ d <- bind_rows(map2(d, rep(gbm, each=length(files)/2),
                             Model=ifelse(Model=="CCSM4", "NCAR-CCSM4", Model),
                             Vegetation=factor(Vegetation, levels=lev)) %>%
                      rename(GBM=Phase, RCP=Scenario, Region=Location))) %>%
-  arrange(GBM, Region, RCP, Model, Var, Vegetation, Year) %>%
-  mutate(GBM=factor(GBM), Model=factor(Model), Region=factor(Region), Var=factor(Var))
+  mutate(GBM=factor(GBM), Region=factor(Region), RCP=factor(RCP, levels=rcp), Model=factor(Model), Var=factor(Var)) %>%
+  arrange(GBM, Region, RCP, Model, Var, Vegetation, Year)
 
-rcps <- c("4.5"="RCP 4.5", "6.0"="RCP 6.0", "8.5"="RCP 8.5")
+rcps <- c("4.5"=rcp[1], "6.0"=rcp[2], "8.5"=rcp[3])
 gbms <- levels(d$GBM)
 gcms <- levels(d$Model)
 #regions <- c("CGF", "CRS", "DAS", "FAS", "GAD", "KKS", "MID", "MSS", "SWS", "TAD", "TAS", "UYD")
