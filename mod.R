@@ -34,42 +34,9 @@ dbmodUI <- function(id, tab_name){
 
 dbmod <- function(input, output, session, xdata, variable, stat, alpha, showLines, jitterPoints){
   ns <- session$ns
-  
-  source("utils.R", local=TRUE)
-  
   rv_plot1 <- reactiveValues(x=NULL, y=NULL, keeprows=rep(TRUE, nrow(isolate(xdata()))))
-  
-  observeEvent(input$plot1_dblclick, {
-    brush <- input$plot1_brush
-    if (!is.null(brush)) {
-      rv_plot1$x <- c(brush$xmin, brush$xmax)
-      rv_plot1$y <- c(brush$ymin, brush$ymax)
-    } else {
-      rv_plot1$x <- NULL
-      rv_plot1$y <- NULL
-    }
-  })
-  
-  observeEvent(xdata(), {
-    rv_plot1$keeprows <- rep(TRUE, nrow(xdata()))
-  })
-  
-  # Toggle points that are clicked
-  observeEvent(input$plot1_click, {
-    res <- nearPoints(xdata(), input$plot1_click, allRows=TRUE)
-    rv_plot1$keeprows <- xor(rv_plot1$keeprows, res$selected_)
-  })
-  
-  # Toggle points that are brushed, when button is clicked
-  observeEvent(input$exclude_toggle, {
-    res <- brushedPoints(xdata(), input$plot1_brush, allRows=TRUE)
-    rv_plot1$keeprows <- xor(rv_plot1$keeprows, res$selected_)
-  })
-  
-  # Reset all points
-  observeEvent(input$exclude_reset, {
-    rv_plot1$keeprows <- rep(TRUE, nrow(xdata()))
-  })
+  source("mod_utils.R", local=TRUE)
+  source("mod_observers.R", local=TRUE)
   
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   keep    <- reactive({
@@ -140,7 +107,7 @@ dbmod <- function(input, output, session, xdata, variable, stat, alpha, showLine
   })
   
   output$Selected_obs <- DT::renderDataTable({
-    # ignore input$plot1_click for table updates; click obs-togglingh removes all selection
+    # ignore input$plot1_click for table updates; click obs-toggling removes all selection
     if(is.null(input$plot1_brush)){
       x <- slice(xdata(), 0)
     } else {

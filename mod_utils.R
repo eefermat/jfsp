@@ -42,3 +42,5 @@ plottheme <- theme(panel.grid.major = element_line(size = .5, color = "grey"),
         panel.spacing.x=unit(0.25,"cm"),
         plot.margin=unit(c(0.5, 1, 0.5, 0.5),"cm"),
         strip.text=element_text(size=14))
+
+plotHeight <- function(x) if(is.null(x)) "0px" else "auto"
