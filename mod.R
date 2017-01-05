@@ -82,20 +82,20 @@ dbmod <- function(input, output, session, xdata, variable, stat, alpha, showLine
     if(length(rv_plot1$keeprows) != nrow(xdata())) return()
     filter(xdata(), !rv_plot1$keeprows)
   })
-  colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(keep()[[colorby()]]))) })
+  colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(xdata()[[colorby()]]))) })
   
   output$plot_ts1 <- renderPlot({
     if(nrow(xdata())==0 | nrow(xdata())!=length(rv_plot1$keeprows) | xdata()$Var[1]!=variable) return()
     if(jitterPoints()) pos <- position_jitter(w=0.2, h=0) else pos <- "identity"
     
-    g <- ggplot(data=keep(), aes_string("Year", stat, colour=colorby()))
-    if(showLines()) g <- g + geom_line(aes(group=interaction(GBM, RCP, Model, Region, Var, Vegetation)), alpha=alpha())
+    g <- ggplot(data=xdata(), aes_string("Year", stat, colour=colorby()))
+    if(showLines()) g <- g + geom_line(data=keep(), aes(group=interaction(GBM, RCP, Model, Region, Var, Vegetation)), alpha=alpha())
     
-    g <- g + geom_point(size=3, alpha=alpha(), position=pos) +
-      geom_point(data=exclude(), shape=21, fill=NA, color="black", alpha=0.25) +
+    g <- g + geom_point(data=keep(), size=5, alpha=alpha(), position=pos) +
+      geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.25) +
       coord_cartesian(xlim=rv_plot1$x, ylim=rv_plot1$y) + theme_bw(base_size = 14)
     
-    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec())
+    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(xdata()[[colorby()]]))
     if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=input$facet_scales)
     g + plottheme
   })
@@ -140,24 +140,16 @@ dbmod <- function(input, output, session, xdata, variable, stat, alpha, showLine
   })
   
   output$Selected_obs <- DT::renderDataTable({
-    if(is.null(input$plot1_brush) && is.null(input$plot1_click)){
+    # ignore input$plot1_click for table updates; click obs-togglingh removes all selection
+    if(is.null(input$plot1_brush)){
       x <- slice(xdata(), 0)
-    } else if(is.null(input$plot1_brush)){
-      x <- nearPoints(xdata(), input$plot1_click, allRows=TRUE)
     } else {
       x <- brushedPoints(xdata(), input$plot1_brush, allRows=TRUE)
     }
-    
-    if(nrow(x)==0) return(
-      DT::datatable(x, options=list(
-      lengthMenu=list(c(5, 10, 25), c('5', '10', '25')), pageLength=5, searching=FALSE)) %>%
-      formatStyle(columns="Var", backgroundColor="white", target='row')
-    )
-    
+    if(nrow(x)==0 || nrow(filter(x, selected_))==0) return()
     x <- mutate(x, included_=rv_plot1$keeprows) %>% filter(selected_) %>% mutate(selected_=NULL)
     x <- mutate(x, included_=paste0(x[[input$colorby]], "_", x$included_))
-
-    clrs <- tableRowColors(x, input$colorby, colorvec(), "25")
+    clrs <- tableRowColors(x, input$colorby, colorvec(), "35")
     
     DT::datatable(x, options=list(
       lengthMenu=list(c(5, 10, 25), c('5', '10', '25')), pageLength=5, searching=FALSE,
