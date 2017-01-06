@@ -15,16 +15,14 @@ dbmodUI <- function(id, tab_name){
       ),
       br(),
       fluidRow(
-        column(4,
-               h4("Selected observations")
-        ),
         column(2,
-               selectizeInput(ns("colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
-               checkboxInput(ns("cumulative"), "Cumulative total", FALSE, width="100%")
+               selectizeInput(ns("colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...'))
+               #,checkboxInput(ns("cumulative"), "Cumulative total", FALSE, width="100%")
         ),
         column(2, selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...'))),
-        column(2, actionButton(ns("exclude_toggle"), "Toggle points", class="btn-block")),
-        column(2, actionButton(ns("exclude_reset"), "Reset", class="btn-block"))
+        column(2, selectizeInput(ns("pooled_vars"), label=NULL, choices=pooled_vars, selected=pooled_vars[1], width="100%", options=list(placeholder='Pooled variables...'))),
+        column(3, actionButton(ns("exclude_toggle"), "Toggle points", class="btn-block")),
+        column(3, actionButton(ns("exclude_reset"), "Reset", class="btn-block"))
       ),
       br(),
       fluidRow(
@@ -32,43 +30,59 @@ dbmodUI <- function(id, tab_name){
         column(8, verbatimTextOutput(ns("info")))
       ),
       fluidRow(
-        column(6, div(DT::dataTableOutput(ns('Selected_obs')), style = "font-size: 75%"))
+        column(4),
+        column(8, div(DT::dataTableOutput(ns('Selected_obs')), style = "font-size: 75%"))
       )
     )
   
 }
 
-dbmod <- function(input, output, session, xdata, variable, stat, alpha, showLines, jitterPoints){
+dbmod <- function(input, output, session, data, variable, stat, alpha, showLines, jitterPoints, facetScales){
   ns <- session$ns
-  rv_plots <- reactiveValues(x=NULL, y=NULL, xden=NULL, yden=NULL, keeprows=rep(TRUE, nrow(isolate(xdata()))))
+  
+  d <- reactive({
+    if(input$pooled_vars=="Unique observations") return(data())
+    grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
+    grp <- c(grp[grp %in% c(input$colorby, input$facetby)], "Var", "Year")
+    group_by_(data(), .dots=grp) %>% summarise_(Avg=lazyeval::interp(~round(mean(x)), x=as.name(stat))) %>% 
+      rename_(.dots=setNames("Avg", stat)) %>% ungroup
+  })
+  
+  rv_plots <- reactiveValues(x=NULL, y=NULL, xden=NULL, yden=NULL, keeprows=rep(TRUE, nrow(isolate(d()))))
   source("mod_utils.R", local=TRUE)
   source("mod_observers.R", local=TRUE)
   
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   keep    <- reactive({
     req(rv_plots$keeprows)
-    if(length(rv_plots$keeprows) != nrow(xdata())) return()
-    filter(xdata(), rv_plots$keeprows)
+    if(length(rv_plots$keeprows) != nrow(d())) return()
+    filter(d(), rv_plots$keeprows)
   })
   exclude <- reactive({
     req(rv_plots$keeprows)
-    if(length(rv_plots$keeprows) != nrow(xdata())) return()
-    filter(xdata(), !rv_plots$keeprows)
+    if(length(rv_plots$keeprows) != nrow(d())) return()
+    filter(d(), !rv_plots$keeprows)
   })
-  colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(xdata()[[colorby()]]))) })
+  colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   
-  preventPlot <- reactive({ nrow(xdata())==0 | nrow(xdata())!=length(rv_plots$keeprows) | xdata()$Var[1]!=variable })
+  preventPlot <- reactive({ nrow(d())==0 | nrow(d())!=length(rv_plots$keeprows) | d()$Var[1]!=variable })
   plotHeight <- reactive({ if(preventPlot()) 0 else 400 })
+  plotInteraction <- reactive({
+    grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
+    x <- grp[grp %in% names(d())]
+    if(!length(x)) return()
+    paste0("interaction(", paste0(x, collapse=","), ")")
+  })
   
   output$plot_density1 <- renderPlot({
     if(preventPlot()) return()
-    g <- ggplot(data=xdata(), aes_string(stat, colour=colorby(), group="interaction(GBM, RCP, Model, Region, Var, Vegetation)"))
+    g <- ggplot(data=d(), aes_string(stat, colour=colorby(), group=plotInteraction()))
     g <- g + geom_line(stat="density", size=1)
     if(!is.null(rv_plots$xden) & !is.null(rv_plots$yden)) g <- g + xlim(rv_plots$xden) + ylim(rv_plots$yden) #+ scale_y_continuous(expand = c(0, 0.5))
     g <- g + theme_bw(base_size=14)
     
-    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(xdata()[[colorby()]]))
-    if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=input$facet_scales)
+    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(d()[[colorby()]]))
+    if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=facetScales())
     g + plottheme
   }, height=function() plotHeight())
   
@@ -76,22 +90,22 @@ dbmod <- function(input, output, session, xdata, variable, stat, alpha, showLine
     if(preventPlot()) return()
     if(jitterPoints()) pos <- position_jitter(w=0.2, h=0) else pos <- "identity"
     
-    g <- ggplot(data=xdata(), aes_string("Year", stat, colour=colorby()))
-    if(showLines()) g <- g + geom_line(data=keep(), aes(group=interaction(GBM, RCP, Model, Region, Var, Vegetation)), alpha=alpha())
+    g <- ggplot(data=d(), aes_string("Year", stat, colour=colorby()))
+    if(showLines()) g <- g + geom_line(data=keep(), aes_string(group=plotInteraction()), alpha=alpha())
     
-    g <- g + geom_point(data=keep(), size=4, alpha=alpha(), position=pos) +
+    g <- g + geom_point(data=keep(), size=3, alpha=alpha(), position=pos) +
       geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.25) +
       coord_cartesian(xlim=rv_plots$x, ylim=rv_plots$y) + theme_bw(base_size=14)
     
-    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(xdata()[[colorby()]]))
-    if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=input$facet_scales)
+    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(d()[[colorby()]]))
+    if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=facetScales())
     g + plottheme
   }, height=function() plotHeight())
   #outputOptions(output, "plot_ts1", suspendWhenHidden=FALSE)
   
   output$plot_ts2 <- renderPlot({
     return()
-    if(nrow(xdata())==0 | nrow(xdata())!=length(rv_plots$keeprows) | xdata()$Var[1]!=variable) return()
+    if(nrow(d())==0 | nrow(d())!=length(rv_plots$keeprows) | d()$Var[1]!=variable) return()
     if(jitterPoints()) pos <- position_jitter(w=0.2, h=0) else pos <- "identity"
     
     grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
@@ -99,13 +113,13 @@ dbmod <- function(input, output, session, xdata, variable, stat, alpha, showLine
     statname <- "Cumulative_total"
     
     g <- ggplot(data=d_keep, aes_string("Year", statname, colour=colorby()))
-    if(showLines()) g <- g + geom_line(aes(group=interaction(GBM, RCP, Model, Region, Var, Vegetation)), alpha=alpha())
+    if(showLines()) g <- g + geom_line(aes_string(group=plotInteraction()), alpha=alpha())
     
-    g <- g + geom_point(size=4, alpha=alpha(), position=pos) +
+    g <- g + geom_point(size=3, alpha=alpha(), position=pos) +
       coord_cartesian(xlim=rv_plots$x, ylim=rv_plots$y) + theme_bw(base_size=14)
     
-    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(xdata()[[colorby()]]))
-    if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=input$facet_scales)
+    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(d()[[colorby()]]))
+    if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=facetScales())
     g + plottheme
   }, height=0)
   
@@ -150,11 +164,11 @@ dbmod <- function(input, output, session, xdata, variable, stat, alpha, showLine
   output$Selected_obs <- DT::renderDataTable({
     # ignore input$plot1_click for table updates; click obs-toggling removes all selection
     if(is.null(input$plot1_brush)){
-      x <- slice(xdata(), 0)
+      x <- slice(d(), 0)
     } else {
-      x <- brushedPoints(xdata(), input$plot1_brush, allRows=TRUE)
+      x <- brushedPoints(d(), input$plot1_brush, allRows=TRUE)
     }
-    if(nrow(x)==0 || nrow(filter(x, selected_))==0) return()
+    if(preventPlot() || nrow(x)==0 || nrow(filter(x, selected_))==0) return()
     x <- mutate(x, included_=rv_plots$keeprows) %>% filter(selected_) %>% mutate(selected_=NULL)
     x <- mutate(x, included_=paste0(x[[input$colorby]], "_", x$included_))
     clrs <- tableRowColors(x, input$colorby, colorvec(), "35")
