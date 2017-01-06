@@ -54,22 +54,12 @@ dashboardPage(
               column(3, checkboxInput("settings_jitterPoints", "Jitter points", FALSE, width="100%"))
             )
     ),
-    #leafletOutput("Map", width="100%"),
     tabItems(
       dbmodUI(id="mod1_burnarea", tab_name="burnarea"),
       dbmodUI(id="mod1_firefreq", tab_name="firefreq"),
       dbmodUI(id="mod1_firesize", tab_name="firesize"),
       dbmodUI(id="mod1_vegarea", tab_name="vegarea"),
-      dbmodUI(id="mod1_vegage", tab_name="vegage"),
-      tabItem("tab2",
-              "Tab2 content"
-      ),
-      tabItem("subitem1",
-              "Tab3 Sub-item 1 content"
-      ),
-      tabItem("subitem2",
-              "Tab3 Sub-item 2 content"
-      )
+      dbmodUI(id="mod1_vegage", tab_name="vegage")
     )
   ),
   title="JFSP"
