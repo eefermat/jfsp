@@ -42,3 +42,22 @@ plottheme <- theme(panel.grid.major = element_line(size = .5, color = "grey"),
         panel.spacing.x=unit(0.25,"cm"),
         plot.margin=unit(c(0.5, 1, 0.5, 0.5),"cm"),
         strip.text=element_text(size=14))
+
+mouseInfo <- function(clk, dblclk, hov, brush){
+  xy_str <- function(e) {
+    if(is.null(e)) return("NULL\n")
+    paste0("x=", round(e$x, 1), " y=", round(e$y, 1), "\n")
+  }
+  xy_range_str <- function(e) {
+    if(is.null(e)) return("NULL\n")
+    paste0("xmin=", round(e$xmin, 1), " xmax=", round(e$xmax, 1), 
+           " ymin=", round(e$ymin, 1), " ymax=", round(e$ymax, 1))
+  }
+  
+  paste0(
+    "click: ", xy_str(clk),
+    "dblclick: ", xy_str(dblclk),
+    "hover: ", xy_str(hov),
+    "brush: ", xy_range_str(brush)
+  )
+}
