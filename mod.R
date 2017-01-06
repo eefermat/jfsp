@@ -3,14 +3,30 @@ dbmodUI <- function(id, tab_name){
 
     tabItem(tabName=tab_name,
       fluidRow(
-        box(plotOutput(ns("plot_density1"), height="auto",
-                       click=ns("plot_density1_click"), dblclick=ns("plot_density1_dblclick"), hover=ns("plot_density1_hover"),
-                       brush=brushOpts(id=ns("plot_density1_brush"), resetOnNew=TRUE)), title="Period density", width=4),
-        box(
-          plotOutput(ns("plot_ts1"), height="auto", click=ns("plot1_click"), dblclick=ns("plot1_dblclick"), hover=ns("plot1_hover"),
-                     brush=brushOpts(id=ns("plot1_brush"), resetOnNew=TRUE)),
-               #conditionalPanel(condition=sprintf("input['%s'] == true", ns("cumulative")), plotOutput(ns("plot_ts2")))
-          title="Annual time series", width=8
+        #box(plotOutput(ns("plot_den"), height="auto",
+        #               click=ns("plot_den_clk"), dblclick=ns("plot_den_dblclk"), hover=ns("plot_den_hov"),
+        #               brush=brushOpts(id=ns("plot_den_brush"), resetOnNew=TRUE)), title="Period density", width=4),
+        tabBox(
+          tabPanel("Histogram",
+                   plotOutput(ns("plot_den2"), height="auto", click=ns("plot_den2_clk"), dblclick=ns("plot_den2_dblclk"), hover=ns("plot_den2_hov"),
+                              brush=brushOpts(id=ns("plot_den2_brush"), resetOnNew=TRUE)), value=ns("histogram")
+          ),
+          tabPanel("Density",
+                   plotOutput(ns("plot_den1"), height="auto", click=ns("plot_den1_clk"), dblclick=ns("plot_den1_dblclk"), hover=ns("plot_den1_hov"),
+                              brush=brushOpts(id=ns("plot_den1_brush"), resetOnNew=TRUE)), value=ns("density")
+          ),
+          ns(id="box_den"), selected=ns("density"), title="Aggregate distribution", width=4, side="right"
+        ),
+        tabBox(
+          tabPanel("Cumulative",
+                   plotOutput(ns("plot_ts2"), height="auto", click=ns("plot_ts2_clk"), dblclick=ns("plot_ts2_dblclk"), hover=ns("plot_ts2_hov"),
+                              brush=brushOpts(id=ns("plot_ts2_brush"), resetOnNew=TRUE)), value=ns("cumulative")
+          ),
+          tabPanel("Annual",
+                   plotOutput(ns("plot_ts1"), height="auto", click=ns("plot_ts1_clk"), dblclick=ns("plot_ts1_dblclk"), hover=ns("plot_ts1_hov"),
+                              brush=brushOpts(id=ns("plot_ts1_brush"), resetOnNew=TRUE)), value=ns("annual")
+          ),
+          ns(id="box_ts"), selected=ns("annual"), title="Time series", width=8, side="right"
         )
       ),
       br(),
@@ -20,18 +36,24 @@ dbmodUI <- function(id, tab_name){
                #,checkboxInput(ns("cumulative"), "Cumulative total", FALSE, width="100%")
         ),
         column(2, selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...'))),
-        column(2, selectizeInput(ns("pooled_vars"), label=NULL, choices=pooled_vars, selected=pooled_vars[1], width="100%", options=list(placeholder='Pooled variables...'))),
+        column(2, selectizeInput(ns("pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%")),
         column(3, actionButton(ns("exclude_toggle"), "Toggle points", class="btn-block")),
         column(3, actionButton(ns("exclude_reset"), "Reset", class="btn-block"))
       ),
-      br(),
-      fluidRow(
-        column(4, verbatimTextOutput(ns("info_density"))),
-        column(8, verbatimTextOutput(ns("info")))
-      ),
       fluidRow(
         column(4),
-        column(8, div(DT::dataTableOutput(ns('Selected_obs')), style = "font-size: 75%"))
+        column(8, div(DT::dataTableOutput(ns('Selected_obs')), style="font-size: 75%"))
+      ),
+      br(),
+      box(
+        column(4,
+               "Mouse feedback for period density plot", verbatimTextOutput(ns("info_den1")),
+               "Mouse feedback for period histogram plot", verbatimTextOutput(ns("info_den2"))
+        ),
+        column(8,
+               "Mouse feedback for annual time series", verbatimTextOutput(ns("info_ts1")),
+               "Mouse feedback for cumulative time series", verbatimTextOutput(ns("info_ts2"))
+        ), title="App diagnostics for interactive plots", width=12
       )
     )
   
@@ -48,7 +70,7 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
       rename_(.dots=setNames("Avg", stat)) %>% ungroup
   })
   
-  rv_plots <- reactiveValues(x=NULL, y=NULL, xden=NULL, yden=NULL, keeprows=rep(TRUE, nrow(isolate(d()))))
+  rv_plots <- reactiveValues(xts1=NULL, yts1=NULL, xts2=NULL, yts2=NULL, xden1=NULL, yden1=NULL, xden2=NULL, yden2=NULL, keeprows=rep(TRUE, nrow(isolate(d()))))
   source("mod_utils.R", local=TRUE)
   source("mod_observers.R", local=TRUE)
   
@@ -74,99 +96,74 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
     paste0("interaction(", paste0(x, collapse=","), ")")
   })
   
-  output$plot_density1 <- renderPlot({
+  distPlot <- function(type, limits){
     if(preventPlot()) return()
-    g <- ggplot(data=d(), aes_string(stat, colour=colorby(), group=plotInteraction()))
-    g <- g + geom_line(stat="density", size=1)
-    if(!is.null(rv_plots$xden) & !is.null(rv_plots$yden)) g <- g + xlim(rv_plots$xden) + ylim(rv_plots$yden) #+ scale_y_continuous(expand = c(0, 0.5))
+    g <- ggplot(data=d(), aes_string(stat, fill=colorby(), colour=colorby(), group=plotInteraction()))
+    if(type=="density") g <- g + geom_line(stat="density", size=1) else g <- g + geom_histogram(size=1, position="dodge")
+    if(!is.null(limits[[1]]) & !is.null(limits[[2]])) g <- g + xlim(limits[[1]]) + ylim(limits[[2]]) #+ scale_y_continuous(expand = c(0, 0.5))
     g <- g + theme_bw(base_size=14)
     
-    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(d()[[colorby()]]))
+    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(d()[[colorby()]])) +
+      scale_fill_manual(values=colorvec(), limits=levels(d()[[colorby()]]))
     if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=facetScales())
     g + plottheme
-  }, height=function() plotHeight())
+  }
   
-  output$plot_ts1 <- renderPlot({
+  tsPlot <- function(type, limits){
     if(preventPlot()) return()
     if(jitterPoints()) pos <- position_jitter(w=0.2, h=0) else pos <- "identity"
     
-    g <- ggplot(data=d(), aes_string("Year", stat, colour=colorby()))
-    if(showLines()) g <- g + geom_line(data=keep(), aes_string(group=plotInteraction()), alpha=alpha())
+    if(type=="cumulative"){
+      grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
+      grp <- grp[grp %in% names(keep())]
+      d_keep <- group_by_(keep(), .dots=grp) %>% mutate_(`Cumulative_total`=lazyeval::interp(~cumsum(x), x=as.name(stat)))
+      statname <- "Cumulative_total"
+    } else {
+      d_keep <- keep()
+      statname <- stat
+    }
     
-    g <- g + geom_point(data=keep(), size=3, alpha=alpha(), position=pos) +
-      geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.25) +
-      coord_cartesian(xlim=rv_plots$x, ylim=rv_plots$y) + theme_bw(base_size=14)
+    g <- ggplot(data=d(), aes_string("Year", statname, colour=colorby()))
+    if(showLines()) g <- g + geom_line(data=d_keep, aes_string(group=plotInteraction()), alpha=alpha())
+    
+    g <- g + geom_point(data=d_keep, size=3, alpha=alpha(), position=pos)
+    if(type=="annual") g <- g + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.25)
+    g <- g + coord_cartesian(xlim=limits[[1]], ylim=limits[[2]]) + theme_bw(base_size=14)
     
     if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(d()[[colorby()]]))
     if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=facetScales())
     g + plottheme
-  }, height=function() plotHeight())
+  }
+  
+  output$plot_den1 <- renderPlot({ distPlot("density", list(rv_plots$xden1, rv_plots$yden1)) }, height=function() plotHeight())
+  output$plot_den2 <- renderPlot({ distPlot("histogram", list(rv_plots$xden2, rv_plots$yden2)) }, height=function() plotHeight())
+  output$plot_ts1 <- renderPlot({ tsPlot("annual", list(rv_plots$xts1, rv_plots$yts1)) }, height=function() plotHeight())
+  output$plot_ts2 <- renderPlot({ tsPlot("cumulative", list(rv_plots$xts2, rv_plots$yts2)) }, height=function() plotHeight())
+  
+  output$info_ts1 <- renderText({ mouseInfo(input$plot_ts1_clk, input$plot_ts1_dblclk, input$plot_ts1_hov, input$plot_ts1_brush) })
+  output$info_ts2 <- renderText({ mouseInfo(input$plot_ts2_clk, input$plot_ts2_dblclk, input$plot_ts2_hov, input$plot_ts2_brush) })
+  output$info_den1 <- renderText({ mouseInfo(input$plot_den1_clk, input$plot_den1_dblclk, input$plot_den1_hov, input$plot_den1_brush) })
+  output$info_den2 <- renderText({ mouseInfo(input$plot_den2_clk, input$plot_den2_dblclk, input$plot_den2_hov, input$plot_den2_brush) })
+  
+  # not suspending when hidden does not work within modules.
+  # Desipite unique prepended module IDs, the ids still seem to conflict.
+  
+  #outputOptions(output, "plot_den2", suspendWhenHidden=FALSE)
   #outputOptions(output, "plot_ts1", suspendWhenHidden=FALSE)
+  #outputOptions(output, "plot_ts2", suspendWhenHidden=FALSE)
   
-  output$plot_ts2 <- renderPlot({
-    return()
-    if(nrow(d())==0 | nrow(d())!=length(rv_plots$keeprows) | d()$Var[1]!=variable) return()
-    if(jitterPoints()) pos <- position_jitter(w=0.2, h=0) else pos <- "identity"
-    
-    grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
-    d_keep <- group_by_(keep(), .dots=grp) %>% mutate_(`Cumulative_total`=lazyeval::interp(~cumsum(x), x=as.name(stat)))
-    statname <- "Cumulative_total"
-    
-    g <- ggplot(data=d_keep, aes_string("Year", statname, colour=colorby()))
-    if(showLines()) g <- g + geom_line(aes_string(group=plotInteraction()), alpha=alpha())
-    
-    g <- g + geom_point(size=3, alpha=alpha(), position=pos) +
-      coord_cartesian(xlim=rv_plots$x, ylim=rv_plots$y) + theme_bw(base_size=14)
-    
-    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(d()[[colorby()]]))
-    if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=facetScales())
-    g + plottheme
-  }, height=0)
-  
-  output$info <- renderText({
-    xy_str <- function(e) {
-      if(is.null(e)) return("NULL\n")
-      paste0("x=", round(e$x, 1), " y=", round(e$y, 1), "\n")
-    }
-    xy_range_str <- function(e) {
-      if(is.null(e)) return("NULL\n")
-      paste0("xmin=", round(e$xmin, 1), " xmax=", round(e$xmax, 1), 
-             " ymin=", round(e$ymin, 1), " ymax=", round(e$ymax, 1))
-    }
-    
-    paste0(
-      "click: ", xy_str(input$plot1_click),
-      "dblclick: ", xy_str(input$plot1_dblclick),
-      "hover: ", xy_str(input$plot1_hover),
-      "brush: ", xy_range_str(input$plot1_brush)
-    )
-  })
-  
-  output$info_density <- renderText({
-    xy_str <- function(e) {
-      if(is.null(e)) return("NULL\n")
-      paste0("x=", round(e$x, 1), " y=", round(e$y, 1), "\n")
-    }
-    xy_range_str <- function(e) {
-      if(is.null(e)) return("NULL\n")
-      paste0("xmin=", round(e$xmin, 1), " xmax=", round(e$xmax, 1), 
-             " ymin=", round(e$ymin, 1), " ymax=", round(e$ymax, 1))
-    }
-    
-    paste0(
-      "click: ", xy_str(input$plot_density1_click),
-      "dblclick: ", xy_str(input$plot_density1_dblclick),
-      "hover: ", xy_str(input$plot_density1_hover),
-      "brush: ", xy_range_str(input$plot_density1_brush)
-    )
-  })
+  #outputOptions(output, "plot_den1", suspendWhenHidden=FALSE)
+  #outputOptions(output, "info_ts1", suspendWhenHidden=FALSE)
+  #outputOptions(output, "info_ts2", suspendWhenHidden=FALSE)
+  #outputOptions(output, "info_den1", suspendWhenHidden=FALSE)
+  #outputOptions(output, "info_den2", suspendWhenHidden=FALSE)
   
   output$Selected_obs <- DT::renderDataTable({
     # ignore input$plot1_click for table updates; click obs-toggling removes all selection
-    if(is.null(input$plot1_brush)){
+    if(is.null(input$plot_ts1_brush)){
       x <- slice(d(), 0)
     } else {
-      x <- brushedPoints(d(), input$plot1_brush, allRows=TRUE)
+      x <- brushedPoints(d(), input$plot_ts1_brush, allRows=TRUE)
     }
     if(preventPlot() || nrow(x)==0 || nrow(filter(x, selected_))==0) return()
     x <- mutate(x, included_=rv_plots$keeprows) %>% filter(selected_) %>% mutate(selected_=NULL)
