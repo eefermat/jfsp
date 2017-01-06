@@ -37,8 +37,8 @@ shinyServer(function(input, output, session) {
   
   dsub <- reactive({ filter(d1(), Var==selected_var()) %>% droplevels })
 
-  map(tab_ids, ~callModule(dbmod, paste0("mod1_", .x), xdata=dsub, variable=selected_var(), stat=input$stat,
+  map(tab_ids, ~callModule(dbmod, paste0("mod1_", .x), data=dsub, variable=selected_var(), stat=input$stat,
                            alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
-                           jitterPoints=reactive(input$settings_jitterPoints)))
+                           jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales)))
   
 })
