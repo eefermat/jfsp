@@ -1,28 +1,42 @@
-# Density plot
+# Distribution - density plot
 
-# Doubleclick observation
-observeEvent(input$plot_density1_dblclick, {
-  brush <- input$plot_density1_brush
+# Doubleclk observation
+observeEvent(input$plot_den1_dblclk, {
+  brush <- input$plot_den1_brush
   if (!is.null(brush)) {
-    rv_plots$xden <- c(brush$xmin, brush$xmax)
-    rv_plots$yden <- c(brush$ymin, brush$ymax)
+    rv_plots$xden1 <- c(brush$xmin, brush$xmax)
+    rv_plots$yden1 <- c(brush$ymin, brush$ymax)
   } else {
-    rv_plots$xden <- NULL
-    rv_plots$yden <- NULL
+    rv_plots$xden1 <- NULL
+    rv_plots$yden1 <- NULL
   }
 })
 
-# Time series plot
+# Distribution - histogram
 
-# Doubleclick observation
-observeEvent(input$plot1_dblclick, {
-  brush <- input$plot1_brush
+# Doubleclk observation
+observeEvent(input$plot_den2_dblclk, {
+  brush <- input$plot_den2_brush
   if (!is.null(brush)) {
-    rv_plots$x <- c(brush$xmin, brush$xmax)
-    rv_plots$y <- c(brush$ymin, brush$ymax)
+    rv_plots$xden2 <- c(brush$xmin, brush$xmax)
+    rv_plots$yden2 <- c(brush$ymin, brush$ymax)
   } else {
-    rv_plots$x <- NULL
-    rv_plots$y <- NULL
+    rv_plots$xden2 <- NULL
+    rv_plots$yden2 <- NULL
+  }
+})
+
+# Time series plot annual
+
+# Doubleclk observation
+observeEvent(input$plot_ts1_dblclk, {
+  brush <- input$plot_ts1_brush
+  if (!is.null(brush)) {
+    rv_plots$xts1 <- c(brush$xmin, brush$xmax)
+    rv_plots$yts1 <- c(brush$ymin, brush$ymax)
+  } else {
+    rv_plots$xts1 <- NULL
+    rv_plots$yts1 <- NULL
   }
 })
 
@@ -30,19 +44,33 @@ observeEvent(d(), {
   rv_plots$keeprows <- rep(TRUE, nrow(d()))
 })
 
-# Toggle points that are clicked
-observeEvent(input$plot1_click, {
-  res <- nearPoints(d(), input$plot1_click, allRows=TRUE)
+# Toggle points that are clked
+observeEvent(input$plot_ts1_clk, {
+  res <- nearPoints(d(), input$plot_ts1_clk, allRows=TRUE)
   rv_plots$keeprows <- xor(rv_plots$keeprows, res$selected_)
 })
 
-# Toggle points that are brushed, when button is clicked
+# Toggle points that are brushed, when button is clked
 observeEvent(input$exclude_toggle, {
-  res <- brushedPoints(d(), input$plot1_brush, allRows=TRUE)
+  res <- brushedPoints(d(), input$plot_ts1_brush, allRows=TRUE)
   rv_plots$keeprows <- xor(rv_plots$keeprows, res$selected_)
 })
 
 # Reset all points
 observeEvent(input$exclude_reset, {
   rv_plots$keeprows <- rep(TRUE, nrow(d()))
+})
+
+# Time series plot cumulative
+
+# Doubleclk observation
+observeEvent(input$plot_ts2_dblclk, {
+  brush <- input$plot_ts2_brush
+  if (!is.null(brush)) {
+    rv_plots$xts2 <- c(brush$xmin, brush$xmax)
+    rv_plots$yts2 <- c(brush$ymin, brush$ymax)
+  } else {
+    rv_plots$xts2 <- NULL
+    rv_plots$yts2 <- NULL
+  }
 })
