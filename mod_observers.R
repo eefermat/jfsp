@@ -74,3 +74,52 @@ observeEvent(input$plot_ts2_dblclk, {
     rv_plots$yts2 <- NULL
   }
 })
+
+# Decadal series boxplot
+
+# Doubleclk observation
+observeEvent(input$plot_dec1_dblclk, {
+  brush <- input$plot_dec1_brush
+  if (!is.null(brush)) {
+    rv_plots$xdec1 <- c(brush$xmin, brush$xmax)
+    rv_plots$ydec1 <- c(brush$ymin, brush$ymax)
+  } else {
+    rv_plots$xdec1 <- NULL
+    rv_plots$ydec1 <- NULL
+  }
+})
+
+observeEvent(keep_dec(), {
+  rv_plots$dec_keeprows <- rep(TRUE, nrow(keep_dec()))
+})
+
+# Toggle points that are clked
+observeEvent(input$plot_dec1_clk, {
+  res <- nearPoints(keep_dec(), input$plot_dec1_clk, allRows=TRUE)
+  rv_plots$dec_keeprows <- xor(rv_plots$dec_keeprows, res$selected_)
+})
+
+# Toggle points that are brushed, when button is clked
+observeEvent(input$exclude_toggle, {
+  res <- brushedPoints(keep_dec(), input$plot_dec1_brush, allRows=TRUE)
+  rv_plots$dec_keeprows <- xor(rv_plots$dec_keeprows, res$selected_)
+})
+
+# Reset all points
+observeEvent(input$exclude_reset, {
+  rv_plots$dec_keeprows <- rep(TRUE, nrow(keep_dec()))
+})
+
+# Decadal series barplot
+
+# Doubleclk observation
+observeEvent(input$plot_dec2_dblclk, {
+  brush <- input$plot_dec2_brush
+  if (!is.null(brush)) {
+    rv_plots$xdec2 <- c(brush$xmin, brush$xmax)
+    rv_plots$ydec2 <- c(brush$ymin, brush$ymax)
+  } else {
+    rv_plots$xdec2 <- NULL
+    rv_plots$ydec2 <- NULL
+  }
+})
