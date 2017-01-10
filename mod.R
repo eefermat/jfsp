@@ -41,9 +41,11 @@ dbmodUI <- function(id, tab_name){
           ),
           tabPanel("Observations",
                    plotOutput(ns("plot_dec1"), height="auto", click=ns("plot_dec1_clk"), dblclick=ns("plot_dec1_dblclk"), hover=ns("plot_dec1_hov"),
-                              brush=brushOpts(id=ns("plot_dec1_brush"), resetOnNew=TRUE)), value=ns("dec_boxplot")
+                              brush=brushOpts(id=ns("plot_dec1_brush"), direction="x")),
+                   uiOutput(ns("decStatsBoxes")),
+                   value=ns("dec_boxplot")
           ),
-          ns(id="box_dec"), selected=ns("dec_boxplot"), title="Decadal change", width=4, side="right"
+          ns(id="box_dec"), selected=ns("dec_boxplot"), title="Decadal change", width=8, side="right"
         )
       ),
       br(),
@@ -84,7 +86,9 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
   rv_plots <- reactiveValues(xts1=NULL, yts1=NULL, xts2=NULL, yts2=NULL, 
                              xden1=NULL, yden1=NULL, xden2=NULL, yden2=NULL,
                              keeprows=rep(TRUE, nrow(isolate(d()))),
-                             xdec1=NULL, ydec1=NULL, xdec2=NULL, ydec2=NULL, dec_keeprows=rep(TRUE, nrow(isolate(d()))))
+                             xdec1=NULL, ydec1=NULL, xdec2=NULL, ydec2=NULL,
+                             dec_keeprows=rep(TRUE, nrow(isolate(d()))),
+                             dec_holdClick=NULL, dec_holdBrush=NULL)
   
   source("mod_utils.R", local=TRUE)
   source("mod_observers.R", local=TRUE)
@@ -114,8 +118,9 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
   keep_dec <- reactive({
     grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
     grp <- grp[grp %in% names(keep())]
-    mutate(keep(), Decade=Year - Year %% 10) %>% group_by_(.dots=c(grp, "Decade")) %>% select(-Year)
+    mutate(keep(), Decade=factor(paste0(Year - Year %% 10, "s"))) %>% group_by_(.dots=c(grp, "Decade")) %>% select(-Year)
   })
+  preventPlot_dec <- reactive({ nrow(keep_dec())==0 | keep_dec()$Var[1]!=variable })
   
   distPlot <- function(type, limits){
     if(preventPlot()) return()
@@ -130,9 +135,20 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
     g + plottheme
   }
   
+  #redraw <- reactive({
+  #  input$plot_dec1_brush
+  #  rv_plots$dec_holdClick
+  #  isolate({
+  #    TRUE
+  #  })
+  #})
+  
   tsPlot <- function(type, limits){
+    #redraw()
+    #isolate({
     if(preventPlot()) return()
     decadal <- !type %in% c("annual", "cumulative")
+    if(decadal && preventPlot_dec()) return()
     if((decadal & type=="boxplot") || (!decadal & jitterPoints())) pos <- position_jitter(width=0.2, height=0) else pos <- "identity"
     if(decadal & !is.null(colorby())) pos <- position_jitterdodge(jitter.width=0.2, jitter.height=0)
     grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
@@ -159,13 +175,22 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
     g <- ggplot(data=d_source, aes_string(x, statname, colour=colorby()))
     
     if(!decadal && showLines()) g <- g + geom_line(data=d_keep, aes_string(group=plotInteraction()), alpha=alpha())
-    x <<- d_source
+    
     if(!decadal){
       g <- g + geom_point(data=d_keep, size=3, alpha=alpha(), position=pos)
       if(type=="annual") g <- g + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.25)
     } else {
       if(type=="boxplot"){
-        g <- g + geom_boxplot(aes(factor(Decade))) + geom_point(aes(factor(Decade)), position=pos)
+        if(nrow(keep_dec())==length(rv_plots$dec_keeprows)){
+          if(!is.null(rv_plots$dec_holdBrush) | !is.null(rv_plots$dec_holdClick)){
+            if(any(rv_plots$dec_keeprows)) d_keep2 <- d_keep[rv_plots$dec_keeprows,] else d_keep2 <- d_keep
+            print(d_keep2)
+            g <- g + geom_boxplot() + geom_point(position=pos) +
+              geom_boxplot(data=d_keep2, size=1) + geom_point(data=d_keep2, position=pos, size=2)
+          }
+        } else {
+          g <- g + geom_boxplot() + geom_point(position=pos)
+        }
       }
       if(type=="barplot") g <- g + geom_bar(stat="identity")
     }
@@ -175,6 +200,7 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
     if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(d()[[colorby()]]))
     if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=facetScales())
     g + plottheme
+    #})
   }
   
   output$plot_den1 <- renderPlot({ distPlot("density", list(rv_plots$xden1, rv_plots$yden1)) }, height=function() plotHeight())
@@ -222,4 +248,37 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
       formatStyle(columns="included_", backgroundColor=clrs, target='row')
   })
 
+  output$decStatsBoxes <- renderUI({
+    if(is.null(rv_plots$dec_holdBrush) && is.null(rv_plots$dec_holdClick)){
+      x <- keep_dec()
+    } else if(is.null(rv_plots$dec_holdBrush)){
+      x <- keep_dec()[rv_plots$dec_keeprows,]
+    } else if(is.null(rv_plots$holdClick)){
+      x <- keep_dec()[rv_plots$dec_keeprows,]
+    }
+    
+    if(preventPlot() || nrow(x)==0) return()
+    x <- ungroup(x) %>% summarise_(.dots=list(
+      Mean_=paste0("mean(", stat, ")"),
+      Min_=paste0("min(", stat, ")"),
+      Max_=paste0("max(", stat, ")"),
+      Median_=paste0("stats::median(", stat, ")"),
+      Pct25_=paste0("stats::quantile(", stat, ", prob=0.25)"),
+      Pct75_=paste0("stats::quantile(", stat, ", prob=0.75)"),
+      SD_=paste0("stats::sd(", stat, ")")
+      )) %>% round
+    
+    clrs <- c("maroon", "olive")
+    y <- list(
+      mean=valueBox(x$Mean_, "Mean", icon=icon("list"), color=clrs[1], width=NULL),
+      min=valueBox(x$Min_, "Min", icon=icon("list"), color=clrs[1], width=NULL),
+      max=valueBox(x$Max_, "Max", icon=icon("list"), color=clrs[1], width=NULL),
+      med=valueBox(x$Median_, "Median", icon=icon("list"), color=clrs[2], width=NULL),
+      iqr=valueBox(paste(x$Pct25_, "-", x$Pct75_), "IQR", icon=icon("list"), color=clrs[2], width=NULL),
+      sd=valueBox(x$SD_, "Std Dev", icon=icon("list"), color=clrs[2], width=NULL)
+    )
+    
+    fluidRow(column(4, y$mean, y$med), column(4, y$min, y$iqr), column(4, y$max, y$sd))
+  })
+  
 }
