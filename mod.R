@@ -40,12 +40,16 @@ dbmodUI <- function(id, tab_name){
                               brush=brushOpts(id=ns("plot_dec2_brush"), resetOnNew=TRUE)), value=ns("dec_barplot")
           ),
           tabPanel("Observations",
-                   plotOutput(ns("plot_dec1"), height="auto", click=ns("plot_dec1_clk"), dblclick=ns("plot_dec1_dblclk"), hover=ns("plot_dec1_hov"),
-                              brush=brushOpts(id=ns("plot_dec1_brush"), direction="x")),
-                   uiOutput(ns("decStatsBoxes")),
+                   fluidRow(
+                     column(4, uiOutput(ns("decStatsBoxes"))),
+                     column(8,
+                       plotOutput(ns("plot_dec1"), height="auto", click=ns("plot_dec1_clk"), dblclick=ns("plot_dec1_dblclk"), hover=ns("plot_dec1_hov"),
+                                brush=brushOpts(id=ns("plot_dec1_brush"), direction="x"))
+                     )
+                   ),
                    value=ns("dec_boxplot")
           ),
-          ns(id="box_dec"), selected=ns("dec_boxplot"), title="Decadal change", width=8, side="right"
+          ns(id="box_dec"), selected=ns("dec_boxplot"), title="Decadal change", width=12, side="right"
         )
       ),
       br(),
@@ -173,6 +177,8 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
     }
     
     g <- ggplot(data=d_source, aes_string(x, statname, colour=colorby()))
+    g2 <- g + geom_boxplot() + geom_point(position=pos)  +
+      geom_boxplot(size=1) + geom_point(position=pos, size=2)
     
     if(!decadal && showLines()) g <- g + geom_line(data=d_keep, aes_string(group=plotInteraction()), alpha=alpha())
     
@@ -184,12 +190,13 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
         if(nrow(keep_dec())==length(rv_plots$dec_keeprows)){
           if(!is.null(rv_plots$dec_holdBrush) | !is.null(rv_plots$dec_holdClick)){
             if(any(rv_plots$dec_keeprows)) d_keep2 <- d_keep[rv_plots$dec_keeprows,] else d_keep2 <- d_keep
-            print(d_keep2)
             g <- g + geom_boxplot() + geom_point(position=pos) +
               geom_boxplot(data=d_keep2, size=1) + geom_point(data=d_keep2, position=pos, size=2)
+          } else {
+            g <- g2
           }
         } else {
-          g <- g + geom_boxplot() + geom_point(position=pos)
+          g <- g2
         }
       }
       if(type=="barplot") g <- g + geom_bar(stat="identity")

@@ -98,7 +98,7 @@ observeEvent(input$plot_dec1_clk, {
   x <- input$plot_dec1_clk
   y <- rv_plots$dec_holdClick
   if(!is.null(x)){
-    if(is.null(y) || y$x!=round(x$x)) rv_plots$dec_holdClick <- x
+    if(is.null(y) || y$x!=x$x) rv_plots$dec_holdClick <- x
   }
 })
 
@@ -109,7 +109,7 @@ observeEvent(input$plot_dec1_clk, {
   if(is.null(clk)) y <- rv_plots$dec_holdClick else y <- clk
   keep_lvls <- lvls[round(y$x)]
   if(!length(keep_lvls) || is.na(keep_lvls)) keep_lvls <- lvls
-  if(any(rv_plots$dec_keeprows!=(x==keep_lvls))) rv_plots$dec_keeprows <- x==keep_lvls
+  if(any(rv_plots$dec_keeprows!=(x==keep_lvls))) rv_plots$dec_keeprows <- x %in% keep_lvls
 })
 
 # Toggle points that are brushed in x axis direction (all y)
