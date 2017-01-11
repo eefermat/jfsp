@@ -19,7 +19,9 @@ valueBox <- function (value, subtitle, icon = NULL, color = "aqua", width = 4, h
 # override shiny function
 icon <- function (name, class = NULL, lib = "font-awesome"){
   if(lib=="local"){
-    if(is.null(name$src)) stop("If lib='local', 'name' must be a named list with a 'src' element and optionally 'width' (defaults to 100%).")
+    if(is.null(name$src))
+      stop("If lib='local', 'name' must be a named list with a 'src' element
+           and optionally 'width' (defaults to 100%).")
     if(is.null(name$width)) name$width <- "100%"
     return(tags$img(class="img img-local", src=name$src, width=name$width))
   }
@@ -38,7 +40,7 @@ icon <- function (name, class = NULL, lib = "font-awesome"){
   iconTag <- tags$i(class = iconClass)
   if (lib == "font-awesome") {
     htmltools::htmlDependencies(iconTag) <- htmltools::htmlDependency("font-awesome", 
-                                                                      "4.6.3", c(href = "shared/font-awesome"), stylesheet = "css/font-awesome.min.css")
+      "4.6.3", c(href = "shared/font-awesome"), stylesheet = "css/font-awesome.min.css")
   }
   iconTag
 }
