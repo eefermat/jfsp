@@ -275,17 +275,24 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
       SD_=paste0("stats::sd(", stat, ")")
       )) %>% round
     
-    clrs <- c("maroon", "olive")
+    clrs <- c("yellow", "orange", "purple", "red", "blue", "navy")
+    statval <- c(x$Mean_, x$Min_, x$Max_, x$Median_, paste(x$Pct25_, "-", x$Pct75_), x$SD_)
+    statlab <- c("Mean", "Min", "Max", "Median", "IQR", "Std Dev")
+    val <- map2(statval, c(rep(100, 4), 75, 100), ~pTextSize(.x, .y))
+    text <- map2(statlab, rep(150, 6), ~pTextSize(.x, .y))
     y <- list(
-      mean=valueBox(x$Mean_, "Mean", icon=icon("list"), color=clrs[1], width=NULL),
-      min=valueBox(x$Min_, "Min", icon=icon("list"), color=clrs[1], width=NULL),
-      max=valueBox(x$Max_, "Max", icon=icon("list"), color=clrs[1], width=NULL),
-      med=valueBox(x$Median_, "Median", icon=icon("list"), color=clrs[2], width=NULL),
-      iqr=valueBox(paste(x$Pct25_, "-", x$Pct75_), "IQR", icon=icon("list"), color=clrs[2], width=NULL),
-      sd=valueBox(x$SD_, "Std Dev", icon=icon("list"), color=clrs[2], width=NULL)
+      mean=valueBox(val[[1]], text[[1]], icon=icon(list(src="stat_icon_normal_mean.png", width="80px"), lib="local"), color=clrs[1], width=NULL),
+      min=valueBox(val[[2]], text[[2]], icon=icon(list(src="stat_icon_normal_min.png", width="80px"), lib="local"), color=clrs[2], width=NULL),
+      max=valueBox(val[[3]], text[[3]], icon=icon(list(src="stat_icon_normal_max.png", width="80px"), lib="local"), color=clrs[3], width=NULL),
+      med=valueBox(val[[4]], text[[4]], icon=icon(list(src="stat_icon_normal_median.png", width="80px"), lib="local"), color=clrs[4], width=NULL),
+      iqr=valueBox(val[[5]], text[[5]], icon=icon(list(src="stat_icon_boxplot_iqr.png", width="80px"), lib="local"), color=clrs[5], width=NULL),
+      sd=valueBox(val[[6]], text[[6]], icon=icon(list(src="stat_icon_normal_sd.png", width="80px"), lib="local"), color=clrs[6], width=NULL)
     )
     
-    fluidRow(column(4, y$mean, y$med), column(4, y$min, y$iqr), column(4, y$max, y$sd))
+    fluidRow(
+      tags$head(tags$style(HTML(".small-box {height: 100px}"))),
+      column(6, y$mean, y$med, y$min), column(6, y$sd, y$iqr, y$max)
+    )
   })
   
 }
