@@ -1,6 +1,11 @@
 dashboardPage(
   dashboardHeader(
-    title=HTML("Alfresco output")#HTML('<div><a href="http://snap.uaf.edu" target="_blank"><img src="./img/SNAP_acronym_100px.png" width="100%"></a></div>'),
+    title="JFSP Alfresco",
+    tags$li(class="dropdown",
+            tags$a(href="http://snap.uaf.edu", target="_blank",
+                   tags$img(src="SNAP_acronym_100px.png", width="100%", alt="SNAP")
+            )
+    )
     #tags$head(includeScript("ga-nwtapp.js"), includeScript("ga-allapps.js")),
   ),
   dashboardSidebar(
@@ -27,6 +32,7 @@ dashboardPage(
     )
   ),
   dashboardBody(
+    includeCSS("www/styles.css"),
     bsModal("modal_data", "Data filter", "btn_modal_data", size = "large",
             leafletOutput("Map", width="100%"),
             fluidRow(
