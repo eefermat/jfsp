@@ -120,6 +120,7 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
   })
   
   keep_dec <- reactive({
+    if(is.null(keep())) return()
     grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
     grp <- grp[grp %in% names(keep())]
     mutate(keep(), Decade=factor(paste0(Year - Year %% 10, "s"))) %>% group_by_(.dots=c(grp, "Decade")) %>% select(-Year)
@@ -264,7 +265,8 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
       x <- keep_dec()[rv_plots$dec_keeprows,]
     }
     
-    if(preventPlot() || nrow(x)==0) return()
+    if(preventPlot() || nrow(x)==0 || any(is.na(x$Var))) return()
+    print(data.frame(x))
     x <- ungroup(x) %>% summarise_(.dots=list(
       Mean_=paste0("mean(", stat, ")"),
       Min_=paste0("min(", stat, ")"),
