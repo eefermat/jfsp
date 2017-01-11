@@ -61,3 +61,5 @@ mouseInfo <- function(clk, dblclk, hov, brush){
     "brush: ", xy_range_str(brush)
   )
 }
+
+pTextSize <- function(x, value) tags$p(x, style=paste0("font-size: ", value, "%;"))
