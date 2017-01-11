@@ -266,7 +266,6 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
     }
     
     if(preventPlot() || nrow(x)==0 || any(is.na(x$Var))) return()
-    print(data.frame(x))
     x <- ungroup(x) %>% summarise_(.dots=list(
       Mean_=paste0("mean(", stat, ")"),
       Min_=paste0("min(", stat, ")"),
@@ -283,12 +282,12 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
     val <- map2(statval, c(rep(100, 4), 75, 100), ~pTextSize(.x, .y))
     text <- map2(statlab, rep(150, 6), ~pTextSize(.x, .y))
     y <- list(
-      mean=valueBox(val[[1]], text[[1]], icon=icon(list(src="stat_icon_normal_mean.png", width="80px"), lib="local"), color=clrs[1], width=NULL),
-      min=valueBox(val[[2]], text[[2]], icon=icon(list(src="stat_icon_normal_min.png", width="80px"), lib="local"), color=clrs[2], width=NULL),
-      max=valueBox(val[[3]], text[[3]], icon=icon(list(src="stat_icon_normal_max.png", width="80px"), lib="local"), color=clrs[3], width=NULL),
-      med=valueBox(val[[4]], text[[4]], icon=icon(list(src="stat_icon_normal_median.png", width="80px"), lib="local"), color=clrs[4], width=NULL),
-      iqr=valueBox(val[[5]], text[[5]], icon=icon(list(src="stat_icon_boxplot_iqr.png", width="80px"), lib="local"), color=clrs[5], width=NULL),
-      sd=valueBox(val[[6]], text[[6]], icon=icon(list(src="stat_icon_normal_sd.png", width="80px"), lib="local"), color=clrs[6], width=NULL)
+      mean=valueBox(val[[1]], text[[1]], icon=icon(list(src="stat_icon_normal_mean_white.png", width="80px"), lib="local"), color=clrs[1], width=NULL),
+      min=valueBox(val[[2]], text[[2]], icon=icon(list(src="stat_icon_normal_min_white.png", width="80px"), lib="local"), color=clrs[2], width=NULL),
+      max=valueBox(val[[3]], text[[3]], icon=icon(list(src="stat_icon_normal_max_white.png", width="80px"), lib="local"), color=clrs[3], width=NULL),
+      med=valueBox(val[[4]], text[[4]], icon=icon(list(src="stat_icon_normal_median_white.png", width="80px"), lib="local"), color=clrs[4], width=NULL),
+      iqr=valueBox(val[[5]], text[[5]], icon=icon(list(src="stat_icon_boxplot_iqr_white.png", width="80px"), lib="local"), color=clrs[5], width=NULL),
+      sd=valueBox(val[[6]], text[[6]], icon=icon(list(src="stat_icon_normal_sd_white.png", width="80px"), lib="local"), color=clrs[6], width=NULL)
     )
     
     fluidRow(
