@@ -62,4 +62,25 @@ mouseInfo <- function(clk, dblclk, hov, brush){
   )
 }
 
+plotDataPrep <- function(trans=NULL, pooled, col, facet, stat){
+  x <- data()
+  if(!is.null(trans) && trans!=""){
+    if(trans=="Log") x <- mutate_(x, Transformed=lazyeval::interp(~log(x+1), x=as.name(stat)))
+    if(trans=="Square root") x <- mutate_(x, Transformed=lazyeval::interp(~sqrt(x), x=as.name(stat)))
+    x <- select_(x, paste0("-", stat)) %>% rename_(.dots=setNames("Transformed", stat))
+  }
+  if(pooled=="Unique observations") return(x)
+  grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
+  grp <- c(grp[grp %in% c(col, facet)], "Var", "Year")
+  group_by_(x, .dots=grp) %>% summarise_(Avg=lazyeval::interp(~round(mean(x)), x=as.name(stat))) %>% 
+    rename_(.dots=setNames("Avg", stat)) %>% ungroup
+}
+
 pTextSize <- function(x, value) tags$p(x, style=paste0("font-size: ", value, "%;"))
+
+interact <- function(x){
+  grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
+  x <- grp[grp %in% x]
+  if(!length(x)) return()
+  paste0("interaction(", paste0(x, collapse=","), ")")
+}

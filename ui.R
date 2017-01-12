@@ -61,11 +61,11 @@ dashboardPage(
             )
     ),
     tabItems(
-      dbmodUI(id="mod1_burnarea", tab_name="burnarea"),
-      dbmodUI(id="mod1_firefreq", tab_name="firefreq"),
-      dbmodUI(id="mod1_firesize", tab_name="firesize"),
-      dbmodUI(id="mod1_vegarea", tab_name="vegarea"),
-      dbmodUI(id="mod1_vegage", tab_name="vegage")
+      dbmodUI(id="mod_burnarea", tab_name="burnarea"),
+      dbmodUI(id="mod_firefreq", tab_name="firefreq"),
+      dbmodUI(id="mod_firesize", tab_name="firesize"),
+      dbmodUI(id="mod_vegarea", tab_name="vegarea"),
+      dbmodUI(id="mod_vegage", tab_name="vegage")
     )
   ),
   title="JFSP"

@@ -10,6 +10,7 @@ fmz <- readOGR("shapefiles/fmz_polygons.shp", verbose=FALSE)
 fmz <- subset(fmz, !REGION %in% c("TNF", "HNS"))
 flam <- readOGR("shapefiles/flam_polygon.shp", verbose=FALSE)
 tab_ids <- c("burnarea", "firefreq", "firesize", "vegarea", "vegage")
+mods <- paste0("mod_", tab_ids)
 
 shinyServer(function(input, output, session) {
   
@@ -28,17 +29,39 @@ shinyServer(function(input, output, session) {
   d1 <- reactive({
     filter(d, GBM %in% input$gbms & RCP %in% input$rcps & Model %in% input$gcms & Region %in% input$regions &
              Vegetation %in% input$veg & Year >= input$yrs[1] & Year <= input$yrs[2]) %>%
-      select_(.dots=c("GBM", "RCP", "Model", "Region", "Var", "Vegetation", "Year", input$stat))
+      select_(.dots=c("GBM", "RCP", "Model", "Region", "Var", "Vegetation", "Year", input$stat)) %>% split(.$Var) %>%
+      map(~droplevels(.x))
   })
   
-  selected_var <- reactive({
-    switch(input$tabs, "burnarea"="Burn Area", "firefreq"="Fire Count", "firesize"="Fire Size", "vegarea"="Vegetated Area", "vegage"="Vegetation Age")
-  })
+  #selected_var <- reactive({
+  #  switch(input$tabs, "burnarea"="Burn Area", "firefreq"="Fire Count", "firesize"="Fire Size", "vegarea"="Vegetated Area", "vegage"="Vegetation Age")
+  #})
   
-  dsub <- reactive({ filter(d1(), Var==selected_var()) %>% droplevels })
+  #dsub <- reactive({ filter(d1(), Var==selected_var()) %>% droplevels })
 
-  map(tab_ids, ~callModule(dbmod, paste0("mod1_", .x), data=dsub, variable=selected_var(), stat=input$stat,
-                           alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
-                           jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales)))
+  #map(tab_ids, ~callModule(dbmod, paste0("mod1_", .x), data=dsub, variable=selected_var(), stat=input$stat,
+  #                         alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
+  #                         jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales)))
   
+  d_ba <- reactive({ d1()[["Burn Area"]] })
+  d_fc <- reactive({ d1()[["Fire Count"]] })
+  d_fs <- reactive({ d1()[["Fire Size"]] })
+  d_v <- reactive({ d1()[["Vegetated Area"]] })
+  d_a <- reactive({ d1()[["Vegetation Age"]] })
+  
+  callModule(dbmod, mods[1], data=d_ba, variable=variables[1],
+             alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
+             jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales))
+  callModule(dbmod, mods[2], data=d_fc, variable=variables[2],
+             alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
+             jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales))
+  callModule(dbmod, mods[3], data=d_fs, variable=variables[3],
+             alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
+             jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales))
+  callModule(dbmod, mods[4], data=d_v, variable=variables[4],
+             alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
+             jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales))
+  callModule(dbmod, mods[5], data=d_a, variable=variables[5],
+             alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
+             jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales))
 })

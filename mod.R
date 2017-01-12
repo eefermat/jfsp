@@ -3,11 +3,9 @@ dbmodUI <- function(id, tab_name){
 
     tabItem(tabName=tab_name,
       fluidRow(
-        column(2, selectizeInput(ns("colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...'))),
-        column(2, selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...'))),
-        column(2, selectizeInput(ns("pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%")),
-        column(3, actionButton(ns("exclude_toggle"), "Toggle points", class="btn-block")),
-        column(3, actionButton(ns("exclude_reset"), "Reset", class="btn-block"))
+        column(4),
+        column(4, actionButton(ns("exclude_toggle"), "Toggle points", class="btn-block")),
+        column(4, actionButton(ns("exclude_reset"), "Reset", class="btn-block"))
       ),
       fluidRow(
         tabBox(
@@ -34,6 +32,29 @@ dbmodUI <- function(id, tab_name){
         )
       ),
       fluidRow(
+        box(
+          fluidRow(
+            column(6,
+                   selectizeInput(ns("den_colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
+                   selectizeInput(ns("den_pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%"),
+                   selectizeInput(ns("den_transform"), label=NULL, choices=c("", "Log", "Square root"), selected="", width="100%")
+            ),
+            column(6, selectizeInput(ns("den_facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')))
+          ),
+          title="Distribution", status="primary", solidHeader=TRUE, width=4, collapsible=TRUE, collapsed=TRUE
+        ),
+        box(
+          fluidRow(
+            column(6,
+                   selectizeInput(ns("colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
+                   selectizeInput(ns("pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%")
+            ),
+            column(6, selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')))
+          ),
+          title="Time series", status="primary", solidHeader=TRUE, width=8, collapsible=TRUE, collapsed=TRUE
+        )
+      ),
+      fluidRow(
         tabBox(
           tabPanel("Averages",
                    plotOutput(ns("plot_dec2"), height="auto", click=ns("plot_dec2_clk"), dblclick=ns("plot_dec2_dblclk"), hover=ns("plot_dec2_hov"),
@@ -51,6 +72,17 @@ dbmodUI <- function(id, tab_name){
           ),
           ns(id="box_dec"), selected=ns("dec_boxplot"), title="Decadal change", width=12, side="right"
         )
+      ),
+      box(
+        fluidRow(
+          column(6,
+                 selectizeInput(ns("dec_colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
+                 selectizeInput(ns("dec_pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%"),
+                 selectizeInput(ns("dec_transform"), label=NULL, choices=c("", "Log", "Square root"), selected="", width="100%")
+          ),
+          column(6, selectizeInput(ns("dec_facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')))
+        ),
+        title="Decadal change", status="primary", solidHeader=TRUE, width=12, collapsible=TRUE, collapsed=TRUE
       ),
       br(),
       fluidRow(
@@ -76,16 +108,14 @@ dbmodUI <- function(id, tab_name){
   
 }
 
-dbmod <- function(input, output, session, data, variable, stat, alpha, showLines, jitterPoints, facetScales){
+dbmod <- function(input, output, session, data, variable, alpha, showLines, jitterPoints, facetScales){
   ns <- session$ns
+  source("mod_utils.R", local=TRUE)
   
-  d <- reactive({
-    if(input$pooled_vars=="Unique observations") return(data())
-    grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
-    grp <- c(grp[grp %in% c(input$colorby, input$facetby)], "Var", "Year")
-    group_by_(data(), .dots=grp) %>% summarise_(Avg=lazyeval::interp(~round(mean(x)), x=as.name(stat))) %>% 
-      rename_(.dots=setNames("Avg", stat)) %>% ungroup
-  })
+  stat <- reactive({ tail(names(data()), 1) })
+  d <- reactive({ plotDataPrep(NULL, input$pooled_vars, input$colorby, input$facetby, stat()) })
+  d_dec <- reactive({ plotDataPrep(input$dec_transform, input$dec_pooled_vars, input$dec_colorby, input$dec_facetby, stat()) })
+  d_den <- reactive({ plotDataPrep(input$den_transform, input$den_pooled_vars, input$den_colorby, input$den_facetby, stat()) })
   
   rv_plots <- reactiveValues(xts1=NULL, yts1=NULL, xts2=NULL, yts2=NULL, 
                              xden1=NULL, yden1=NULL, xden2=NULL, yden2=NULL,
@@ -94,10 +124,16 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
                              dec_keeprows=rep(TRUE, nrow(isolate(d()))),
                              dec_holdClick=NULL, dec_holdBrush=NULL)
   
-  source("mod_utils.R", local=TRUE)
   source("mod_observers.R", local=TRUE)
   
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
+  den_colorby <- reactive({ if(input$den_colorby=="") NULL else input$den_colorby })
+  dec_colorby <- reactive({ if(input$dec_colorby=="") NULL else input$dec_colorby })
+  
+  colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
+  den_colorvec <- reactive({ if(is.null(den_colorby())) NULL else tolpal(length(unique(d_den()[[den_colorby()]]))) })
+  dec_colorvec <- reactive({ if(is.null(dec_colorby())) NULL else tolpal(length(unique(d_dec()[[dec_colorby()]]))) })
+  
   keep    <- reactive({
     req(rv_plots$keeprows)
     if(length(rv_plots$keeprows) != nrow(d())) return()
@@ -108,35 +144,32 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
     if(length(rv_plots$keeprows) != nrow(d())) return()
     filter(d(), !rv_plots$keeprows)
   })
-  colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   
   preventPlot <- reactive({ nrow(d())==0 | nrow(d())!=length(rv_plots$keeprows) | d()$Var[1]!=variable })
   plotHeight <- reactive({ if(preventPlot()) 0 else 400 })
-  plotInteraction <- reactive({
-    grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
-    x <- grp[grp %in% names(d())]
-    if(!length(x)) return()
-    paste0("interaction(", paste0(x, collapse=","), ")")
-  })
+  
+  plotInteraction <- reactive({ interact(names(d())) })
+  den_plotInteraction <- reactive({ interact(names(d_den())) })
+  dec_plotInteraction <- reactive({ interact(names(d_dec())) })
   
   keep_dec <- reactive({
-    if(is.null(keep())) return()
+    if(is.null(d_dec())) return()
     grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
-    grp <- grp[grp %in% names(keep())]
-    mutate(keep(), Decade=factor(paste0(Year - Year %% 10, "s"))) %>% group_by_(.dots=c(grp, "Decade")) %>% select(-Year)
+    grp <- grp[grp %in% names(d_dec())]
+    mutate(d_dec(), Decade=factor(paste0(Year - Year %% 10, "s"))) %>% group_by_(.dots=c(grp, "Decade")) %>% select(-Year)
   })
   preventPlot_dec <- reactive({ nrow(keep_dec())==0 | keep_dec()$Var[1]!=variable })
   
   distPlot <- function(type, limits){
-    if(preventPlot()) return()
-    g <- ggplot(data=d(), aes_string(stat, fill=colorby(), colour=colorby(), group=plotInteraction()))
+    #if(preventPlot()) return()
+    g <- ggplot(data=d_den(), aes_string(stat(), fill=den_colorby(), colour=den_colorby(), group=den_plotInteraction()))
     if(type=="density") g <- g + geom_line(stat="density", size=1) else g <- g + geom_histogram(size=1, position="dodge")
     if(!is.null(limits[[1]]) & !is.null(limits[[2]])) g <- g + xlim(limits[[1]]) + ylim(limits[[2]]) #+ scale_y_continuous(expand = c(0, 0.5))
     g <- g + theme_bw(base_size=14)
     
-    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(d()[[colorby()]])) +
-      scale_fill_manual(values=colorvec(), limits=levels(d()[[colorby()]]))
-    if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=facetScales())
+    if(!is.null(den_colorvec())) g <- g + scale_colour_manual(values=den_colorvec(), limits=levels(d_den()[[den_colorby()]])) +
+      scale_fill_manual(values=den_colorvec(), limits=levels(d_den()[[den_colorby()]]))
+    if(input$den_facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$den_facetby)), scales=facetScales())
     g + plottheme
   }
   
@@ -151,37 +184,52 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
   tsPlot <- function(type, limits){
     #redraw()
     #isolate({
-    if(preventPlot()) return()
-    decadal <- !type %in% c("annual", "cumulative")
+    ann.types <- paste0("annual-", c("raw", "cumulative", "log", "sqrt"))
+    decadal <- !type %in% ann.types
+    if(!decadal && preventPlot()) return()
     if(decadal && preventPlot_dec()) return()
     if((decadal & type=="boxplot") || (!decadal & jitterPoints())) pos <- position_jitter(width=0.2, height=0) else pos <- "identity"
-    if(decadal & !is.null(colorby())) pos <- position_jitterdodge(jitter.width=0.2, jitter.height=0)
-    grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
-    grp <- grp[grp %in% names(keep())]
-    x <- "Year"
-    statname <- stat
-    d_source <- d()
+    if(decadal && !is.null(dec_colorby())) pos <- position_jitterdodge(jitter.width=0.2, jitter.height=0)
     
-    if(type=="cumulative"){
-      d_keep <- group_by_(keep(), .dots=grp) %>% mutate_(Cumulative_total=lazyeval::interp(~cumsum(x), x=as.name(stat)))
+    grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
+    if(!decadal) grp <- grp[grp %in% names(keep())]
+    x <- "Year"
+    statname <- stat()
+    
+    if(type=="annual-cumulative"){
+      d_keep <- group_by_(keep(), .dots=grp) %>% mutate_(Cumulative_total=lazyeval::interp(~cumsum(x), x=as.name(stat())))
       statname <- "Cumulative_total"
-    } else if(type=="annual") {
+    } else if(type=="annual-raw") {
       d_keep <- keep()
     } else {
-      x <- "Decade"
       d_keep <- keep_dec()
+      x <- "Decade"
       if(type=="barplot"){
-        d_keep <- summarise_(d_keep, Decadal_mean=lazyeval::interp(~mean(x), x=as.name(stat)))
+        d_keep <- summarise_(d_keep, Decadal_mean=lazyeval::interp(~mean(x), x=as.name(stat())))
         statname <- "Decadal_mean"
       }
       d_source <- d_keep
     }
     
-    g <- ggplot(data=d_source, aes_string(x, statname, colour=colorby()))
+    if(type %in% ann.types){
+      d_source <- d()
+      clrby <- colorby()
+      pInteract <- plotInteraction()
+      clrvec <- colorvec()
+      fctby <- input$facetby
+    } else {
+      d_source <- d_keep
+      clrby <- dec_colorby()
+      pInteract <- dec_plotInteraction()
+      clrvec <- dec_colorvec()
+      fctby <- input$dec_facetby
+    }
+      
+    g <- ggplot(data=d_source, aes_string(x, statname, colour=clrby))
     g2 <- g + geom_boxplot() + geom_point(position=pos)  +
       geom_boxplot(size=1) + geom_point(position=pos, size=2)
     
-    if(!decadal && showLines()) g <- g + geom_line(data=d_keep, aes_string(group=plotInteraction()), alpha=alpha())
+    if(!decadal && showLines()) g <- g + geom_line(data=d_keep, aes_string(group=pInteract), alpha=alpha())
     
     if(!decadal){
       g <- g + geom_point(data=d_keep, size=3, alpha=alpha(), position=pos)
@@ -205,16 +253,16 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
     
     g <- g + coord_cartesian(xlim=limits[[1]], ylim=limits[[2]]) + theme_bw(base_size=14)
     
-    if(!is.null(colorvec())) g <- g + scale_colour_manual(values=colorvec(), limits=levels(d()[[colorby()]]))
-    if(input$facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=facetScales())
+    if(!is.null(clrvec)) g <- g + scale_colour_manual(values=clrvec, limits=levels(d_source[[clrby]]))
+    if(fctby!="") g <- g + facet_wrap(as.formula(paste0("~", fctby)), scales=facetScales())
     g + plottheme
     #})
   }
   
   output$plot_den1 <- renderPlot({ distPlot("density", list(rv_plots$xden1, rv_plots$yden1)) }, height=function() plotHeight())
   output$plot_den2 <- renderPlot({ distPlot("histogram", list(rv_plots$xden2, rv_plots$yden2)) }, height=function() plotHeight())
-  output$plot_ts1 <- renderPlot({ tsPlot("annual", list(rv_plots$xts1, rv_plots$yts1)) }, height=function() plotHeight())
-  output$plot_ts2 <- renderPlot({ tsPlot("cumulative", list(rv_plots$xts2, rv_plots$yts2)) }, height=function() plotHeight())
+  output$plot_ts1 <- renderPlot({ tsPlot("annual-raw", list(rv_plots$xts1, rv_plots$yts1)) }, height=function() plotHeight())
+  output$plot_ts2 <- renderPlot({ tsPlot("annual-cumulative", list(rv_plots$xts2, rv_plots$yts2)) }, height=function() plotHeight())
   output$plot_dec1 <- renderPlot({ tsPlot("boxplot", list(rv_plots$xdec1, rv_plots$ydec1)) }, height=function() plotHeight())
   output$plot_dec2 <- renderPlot({ tsPlot("barplot", list(rv_plots$xdec2, rv_plots$ydec2)) }, height=function() plotHeight())
   
@@ -265,15 +313,15 @@ dbmod <- function(input, output, session, data, variable, stat, alpha, showLines
       x <- keep_dec()[rv_plots$dec_keeprows,]
     }
     
-    if(preventPlot() || nrow(x)==0 || any(is.na(x$Var))) return()
+    if(preventPlot_dec() || nrow(x)==0 || any(is.na(x$Var))) return()
     x <- ungroup(x) %>% summarise_(.dots=list(
-      Mean_=paste0("mean(", stat, ")"),
-      Min_=paste0("min(", stat, ")"),
-      Max_=paste0("max(", stat, ")"),
-      Median_=paste0("stats::median(", stat, ")"),
-      Pct25_=paste0("stats::quantile(", stat, ", prob=0.25)"),
-      Pct75_=paste0("stats::quantile(", stat, ", prob=0.75)"),
-      SD_=paste0("stats::sd(", stat, ")")
+      Mean_=paste0("mean(", stat(), ")"),
+      Min_=paste0("min(", stat(), ")"),
+      Max_=paste0("max(", stat(), ")"),
+      Median_=paste0("stats::median(", stat(), ")"),
+      Pct25_=paste0("stats::quantile(", stat(), ", prob=0.25)"),
+      Pct75_=paste0("stats::quantile(", stat(), ", prob=0.75)"),
+      SD_=paste0("stats::sd(", stat(), ")")
       )) %>% round
     
     clrs <- c("yellow", "orange", "purple", "red", "blue", "navy")
