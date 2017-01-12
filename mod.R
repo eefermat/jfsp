@@ -2,13 +2,19 @@ dbmodUI <- function(id, tab_name){
   ns <- NS(id)
 
     tabItem(tabName=tab_name,
-      fluidRow(
-        column(4),
-        column(4, actionButton(ns("exclude_toggle"), "Toggle points", class="btn-block")),
-        column(4, actionButton(ns("exclude_reset"), "Reset", class="btn-block"))
-      ),
-      fluidRow(
-        tabBox(
+      fluidRow( # Row 1
+        tabBox( # Annual time series tab box
+          tabPanel("Cumulative",
+                   plotOutput(ns("plot_ts2"), height="auto", click=ns("plot_ts2_clk"), dblclick=ns("plot_ts2_dblclk"), hover=ns("plot_ts2_hov"),
+                              brush=brushOpts(id=ns("plot_ts2_brush"), resetOnNew=TRUE)), value=ns("cumulative")
+          ),
+          tabPanel("Raw Observations",
+                   plotOutput(ns("plot_ts1"), height="auto", click=ns("plot_ts1_clk"), dblclick=ns("plot_ts1_dblclk"), hover=ns("plot_ts1_hov"),
+                              brush=brushOpts(id=ns("plot_ts1_brush"), resetOnNew=TRUE)), value=ns("annual")
+          ),
+          ns(id="box_ts"), selected=ns("annual"), title="Time series", width=8, side="right"
+        ),
+        tabBox( # Distributions tab box
           tabPanel("Histogram",
                    plotOutput(ns("plot_den2"), height="auto", click=ns("plot_den2_clk"), dblclick=ns("plot_den2_dblclk"), hover=ns("plot_den2_hov"),
                               brush=brushOpts(id=ns("plot_den2_brush"), resetOnNew=TRUE)), value=ns("histogram")
@@ -18,21 +24,29 @@ dbmodUI <- function(id, tab_name){
                               brush=brushOpts(id=ns("plot_den1_brush"), resetOnNew=TRUE)), value=ns("density")
           ),
           ns(id="box_den"), selected=ns("density"), title="Aggregate distribution", width=4, side="right"
-        ),
-        tabBox(
-          tabPanel("Cumulative",
-                   plotOutput(ns("plot_ts2"), height="auto", click=ns("plot_ts2_clk"), dblclick=ns("plot_ts2_dblclk"), hover=ns("plot_ts2_hov"),
-                              brush=brushOpts(id=ns("plot_ts2_brush"), resetOnNew=TRUE)), value=ns("cumulative")
-          ),
-          tabPanel("Annual",
-                   plotOutput(ns("plot_ts1"), height="auto", click=ns("plot_ts1_clk"), dblclick=ns("plot_ts1_dblclk"), hover=ns("plot_ts1_hov"),
-                              brush=brushOpts(id=ns("plot_ts1_brush"), resetOnNew=TRUE)), value=ns("annual")
-          ),
-          ns(id="box_ts"), selected=ns("annual"), title="Time series", width=8, side="right"
         )
       ),
-      fluidRow(
-        box(
+      fluidRow( # Row 2
+        box( # Annual time series inputs
+          fluidRow(
+            column(4,
+                   selectizeInput(ns("colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
+                   selectizeInput(ns("pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%"),
+                   selectizeInput(ns("transform"), label=NULL, choices=c("", "Log", "Square root"), selected="", width="100%")
+            ),
+            column(4, selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...'))),
+            column(4,
+                   actionButton(ns("exclude_toggle"), "Toggle selected points", class="btn-block"),
+                   actionButton(ns("exclude_reset"), "Reset points", class="btn-block"),
+                   uiOutput(ns("btn_modal_table"))
+            )
+          ),
+          bsModal(ns("modal_table"), "Selected observations", ns("btn_modal_table"), size = "large",
+                  div(DT::dataTableOutput(ns('Selected_obs')), style="font-size: 100%")
+          ),
+          title="Time series", status="primary", solidHeader=TRUE, width=8, collapsible=TRUE, collapsed=TRUE
+        ),
+        box( # Distributions inputs
           fluidRow(
             column(6,
                    selectizeInput(ns("den_colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
@@ -42,65 +56,52 @@ dbmodUI <- function(id, tab_name){
             column(6, selectizeInput(ns("den_facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')))
           ),
           title="Distribution", status="primary", solidHeader=TRUE, width=4, collapsible=TRUE, collapsed=TRUE
-        ),
-        box(
-          fluidRow(
-            column(6,
-                   selectizeInput(ns("colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
-                   selectizeInput(ns("pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%")
-            ),
-            column(6, selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')))
-          ),
-          title="Time series", status="primary", solidHeader=TRUE, width=8, collapsible=TRUE, collapsed=TRUE
         )
       ),
-      fluidRow(
-        tabBox(
+      fluidRow( # Row 3
+        tabBox( # Decadal change tab box
           tabPanel("Averages",
                    plotOutput(ns("plot_dec2"), height="auto", click=ns("plot_dec2_clk"), dblclick=ns("plot_dec2_dblclk"), hover=ns("plot_dec2_hov"),
                               brush=brushOpts(id=ns("plot_dec2_brush"), resetOnNew=TRUE)), value=ns("dec_barplot")
           ),
           tabPanel("Observations",
                    fluidRow(
-                     column(4, uiOutput(ns("decStatsBoxes"))),
                      column(8,
                        plotOutput(ns("plot_dec1"), height="auto", click=ns("plot_dec1_clk"), dblclick=ns("plot_dec1_dblclk"), hover=ns("plot_dec1_hov"),
                                 brush=brushOpts(id=ns("plot_dec1_brush"), direction="x"))
-                     )
+                     ),
+                     column(4, uiOutput(ns("decStatsBoxes")))
                    ),
                    value=ns("dec_boxplot")
           ),
           ns(id="box_dec"), selected=ns("dec_boxplot"), title="Decadal change", width=12, side="right"
         )
       ),
-      box(
-        fluidRow(
-          column(6,
-                 selectizeInput(ns("dec_colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
-                 selectizeInput(ns("dec_pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%"),
-                 selectizeInput(ns("dec_transform"), label=NULL, choices=c("", "Log", "Square root"), selected="", width="100%")
+      fluidRow( # Row 4
+        box( # Decadal change inputs
+          fluidRow(
+            column(6,
+                   selectizeInput(ns("dec_colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
+                   selectizeInput(ns("dec_pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%"),
+                   selectizeInput(ns("dec_transform"), label=NULL, choices=c("", "Log", "Square root"), selected="", width="100%")
+            ),
+            column(6, selectizeInput(ns("dec_facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')))
           ),
-          column(6, selectizeInput(ns("dec_facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')))
-        ),
-        title="Decadal change", status="primary", solidHeader=TRUE, width=12, collapsible=TRUE, collapsed=TRUE
+          title="Decadal change", status="primary", solidHeader=TRUE, width=12, collapsible=TRUE, collapsed=TRUE
+        )
       ),
       br(),
-      fluidRow(
-        column(4),
-        column(8, div(DT::dataTableOutput(ns('Selected_obs')), style="font-size: 75%"))
-      ),
-      br(),
-      fluidRow(
+      fluidRow( # Row 5 - feedback for testing purposes - remove later
         box(
+        column(8,
+               "Mouse feedback for annual time series", verbatimTextOutput(ns("info_ts1")),
+               "Mouse feedback for cumulative time series", verbatimTextOutput(ns("info_ts2"))
+        ),
         column(4,
                "Mouse feedback for period density plot", verbatimTextOutput(ns("info_den1")),
                "Mouse feedback for period histogram plot", verbatimTextOutput(ns("info_den2")),
                "Mouse feedback for decadal box plot", verbatimTextOutput(ns("info_dec1")),
                "Mouse feedback for decadal bar plot", verbatimTextOutput(ns("info_dec2"))
-        ),
-        column(8,
-               "Mouse feedback for annual time series", verbatimTextOutput(ns("info_ts1")),
-               "Mouse feedback for cumulative time series", verbatimTextOutput(ns("info_ts2"))
         ), title="App diagnostics for interactive plots", width=12
       )
       )
@@ -113,7 +114,7 @@ dbmod <- function(input, output, session, data, variable, alpha, showLines, jitt
   source("mod_utils.R", local=TRUE)
   
   stat <- reactive({ tail(names(data()), 1) })
-  d <- reactive({ plotDataPrep(NULL, input$pooled_vars, input$colorby, input$facetby, stat()) })
+  d <- reactive({ plotDataPrep(input$transform, input$pooled_vars, input$colorby, input$facetby, stat()) })
   d_dec <- reactive({ plotDataPrep(input$dec_transform, input$dec_pooled_vars, input$dec_colorby, input$dec_facetby, stat()) })
   d_den <- reactive({ plotDataPrep(input$den_transform, input$den_pooled_vars, input$den_colorby, input$den_facetby, stat()) })
   
@@ -233,7 +234,7 @@ dbmod <- function(input, output, session, data, variable, alpha, showLines, jitt
     
     if(!decadal){
       g <- g + geom_point(data=d_keep, size=3, alpha=alpha(), position=pos)
-      if(type=="annual") g <- g + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.25)
+      if(type=="annual-raw") g <- g + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.25)
     } else {
       if(type=="boxplot"){
         if(nrow(keep_dec())==length(rv_plots$dec_keeprows)){
@@ -303,7 +304,12 @@ dbmod <- function(input, output, session, data, variable, alpha, showLines, jitt
       columnDefs=list(list(visible=FALSE, targets=ncol(x))))) %>%
       formatStyle(columns="included_", backgroundColor=clrs, target='row')
   })
-
+  
+  output$btn_modal_table <- renderUI({
+    if(is.null(input$plot_ts1_brush)) return()
+    actionButton(ns("btn_modal_table"), "Show selections", icon("list"), class="btn-block")
+  })
+  
   output$decStatsBoxes <- renderUI({
     if(is.null(rv_plots$dec_holdBrush) && is.null(rv_plots$dec_holdClick)){
       x <- keep_dec()
