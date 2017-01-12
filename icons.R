@@ -64,7 +64,7 @@ makeIcons <- function(primary_color="#FFFFFF", secondary_color="#FFFFFF75", colo
   hist(x2, breaks=seq(xlm[1], xlm[2], by=1), freq=FALSE, add=TRUE, border=secondary_color)
   lines(x, y, col=secondary_color)
   abline(v=c(-1,1), lwd=3, lty=2, col=primary_color)
-  legend("topright", legend=expression(bolditalic(hat(s))), bty="n", pch=NA, cex=3, adj=c(-0.5, 0), text.col=primary_color)
+  legend("topright", legend=expression(bolditalic(s)), bty="n", pch=NA, cex=3, adj=c(-0.5, 0), text.col=primary_color)
   dev.off()
   
   showtext.auto(enable=FALSE)
