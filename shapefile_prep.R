@@ -1,3 +1,4 @@
+library(rgdal)
 library(raster)
 library(maptools)
 
@@ -8,17 +9,16 @@ flam <- rasterToPolygons(flam, dissolve=TRUE) %>% spTransform(proj4)
 shapefile(flam, "shapefiles/flam_polygon.shp")
 
 # Prepped fire management zones shapefile
-fmz <- readOGR("shapefiles/FireManagementZones_simplified.shp", verbose=FALSE)
+fmz <- readOGR("shapefiles/FireManagementZonesV2.shp", verbose=FALSE)
 fmz <- spTransform(fmz, proj4)
-fmz@data$Shape_Area <- NULL
-fmz@data$Shape_Leng <- NULL
+fmz@data <- fmz@data[, names(fmz@data) %in% c("OBJECTID", "REGION")]
 shapefile(fmz, "shapefiles/fmz_polygons.shp")
 
 # below code produces shapefiles not currently in use.
 id <- cut(coordinates(fmz)[,1], quantile(coordinates(fmz)[,1]), include.lowest=TRUE)
 ak <- unionSpatialPolygons(fmz, id)
 
-id <- unlist(map(1:4, ~ak@polygons[[.x]]@ID))
+id <- unlist(purrr::map(1:4, ~ak@polygons[[.x]]@ID))
 d <- data.frame(OBJECTID=factor(id), REGION=factor(paste0("AK", 1:4)), AGENCY=factor(paste0("AK", 1:4)))
 rownames(d) <- id
 ak <- SpatialPolygonsDataFrame(ak, d)
