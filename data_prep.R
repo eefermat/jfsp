@@ -36,4 +36,10 @@ period <- range(d$Year)
 variables <- levels(d$Var)
 stats <- c("Mean", "SD", "Min", "Max")
 
-save(d, gbms, rcps, gcms, regions, veg, period, variables, stats, file="appData.RData")
+# Shapefiles
+library(rgdal)
+flam <- readOGR("shapefiles/flam_polygon.shp", verbose=FALSE)
+fmz <- readOGR("shapefiles/fmz_polygons.shp", verbose=FALSE)
+
+# Save app workspace
+save(d, gbms, rcps, gcms, regions, veg, period, variables, stats, flam, fmz, file="appData.RData")
