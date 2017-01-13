@@ -6,8 +6,7 @@ library(ggplot2)
 
 lon <- -155
 lat <- 65
-fmz <- readOGR("shapefiles/fmz_polygons.shp", verbose=FALSE)
-fmz <- subset(fmz, !REGION %in% c("TNF", "HNS"))
+fmz <- readOGR("shapefiles/FireManagementZonesV2.shp", verbose=FALSE)
 flam <- readOGR("shapefiles/flam_polygon.shp", verbose=FALSE)
 tab_ids <- c("burnarea", "firefreq", "firesize", "vegarea", "vegage")
 mods <- paste0("mod_", tab_ids)
@@ -49,19 +48,9 @@ shinyServer(function(input, output, session) {
   d_v <- reactive({ d1()[["Vegetated Area"]] })
   d_a <- reactive({ d1()[["Vegetation Age"]] })
   
-  callModule(dbmod, mods[1], data=d_ba, variable=variables[1],
-             alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
-             jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales))
-  callModule(dbmod, mods[2], data=d_fc, variable=variables[2],
-             alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
-             jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales))
-  callModule(dbmod, mods[3], data=d_fs, variable=variables[3],
-             alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
-             jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales))
-  callModule(dbmod, mods[4], data=d_v, variable=variables[4],
-             alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
-             jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales))
-  callModule(dbmod, mods[5], data=d_a, variable=variables[5],
-             alpha=reactive(input$settings_alpha), showLines=reactive(input$settings_showLines),
-             jitterPoints=reactive(input$settings_jitterPoints), facetScales=reactive(input$facet_scales))
+  callModule(dbmod, mods[1], data=d_ba)
+  callModule(dbmod, mods[2], data=d_fc)
+  callModule(dbmod, mods[3], data=d_fs)
+  callModule(dbmod, mods[4], data=d_v)
+  callModule(dbmod, mods[5], data=d_a)
 })

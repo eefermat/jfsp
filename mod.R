@@ -17,11 +17,11 @@ dbmodUI <- function(id, tab_name){
         tabBox( # Distributions tab box
           tabPanel("Histogram",
                    plotOutput(ns("plot_den2"), height="auto", click=ns("plot_den2_clk"), dblclick=ns("plot_den2_dblclk"), hover=ns("plot_den2_hov"),
-                              brush=brushOpts(id=ns("plot_den2_brush"), resetOnNew=TRUE)), value=ns("histogram")
+                              brush=brushOpts(id=ns("plot_den2_brush"), direction="x", resetOnNew=TRUE)), value=ns("histogram")
           ),
           tabPanel("Density",
                    plotOutput(ns("plot_den1"), height="auto", click=ns("plot_den1_clk"), dblclick=ns("plot_den1_dblclk"), hover=ns("plot_den1_hov"),
-                              brush=brushOpts(id=ns("plot_den1_brush"), resetOnNew=TRUE)), value=ns("density")
+                              brush=brushOpts(id=ns("plot_den1_brush"), direction="x", resetOnNew=TRUE)), value=ns("density")
           ),
           ns(id="box_den"), selected=ns("density"), title="Aggregate distribution", width=4, side="right"
         )
@@ -34,7 +34,18 @@ dbmodUI <- function(id, tab_name){
                    selectizeInput(ns("pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%"),
                    selectizeInput(ns("transform"), label=NULL, choices=c("", "Log", "Square root"), selected="", width="100%")
             ),
-            column(4, selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...'))),
+            column(4,
+                   selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')),
+                   bsModal(ns("ts_settings"), "Annual time series additional settings", ns("btn_ts_settings"), size="large",
+                           fluidRow(
+                             column(3, selectInput(ns("ts_facet_scales"), "Axis scales", choices=axis_scales, selected="fixed", width="100%")),
+                             column(3, sliderInput(ns("ts_alpha"), "Semi-transparency", min=0.1, max=1, value=1, step=0.1, sep="", width="100%")),
+                             column(3, checkboxInput(ns("ts_lines"), "Connect points with lines", FALSE, width="100%")),
+                             column(3, checkboxInput(ns("ts_jitter"), "Jitter points", FALSE, width="100%"))
+                           )
+                   ),
+                   actionButton(ns("btn_ts_settings"), "Additional settings", icon("gear"), class="btn-block")
+                   ),
             column(4,
                    actionButton(ns("exclude_toggle"), "Toggle selected points", class="btn-block"),
                    actionButton(ns("exclude_reset"), "Reset points", class="btn-block"),
@@ -53,7 +64,18 @@ dbmodUI <- function(id, tab_name){
                    selectizeInput(ns("den_pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%"),
                    selectizeInput(ns("den_transform"), label=NULL, choices=c("", "Log", "Square root"), selected="", width="100%")
             ),
-            column(6, selectizeInput(ns("den_facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')))
+            column(6,
+                   selectizeInput(ns("den_facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')),
+                   bsModal(ns("den_settings"), "Distribution plot additional settings", ns("btn_den_settings"), size="large",
+                           fluidRow(
+                             column(3, selectInput(ns("den_facet_scales"), "Axis scales", choices=axis_scales, selected="fixed", width="100%")),
+                             column(3, sliderInput(ns("den_alpha"), "Semi-transparency", min=0.1, max=1, value=1, step=0.1, sep="", width="100%")),
+                             column(3, sliderInput(ns("den_bins"), "Histogram bins (approx.)", min=5, max=30, value=10, step=5, sep="", width="100%")),
+                             column(3, selectInput(ns("den_zoom"), "Zoom behavior", choices=c("Zoom only", "Subset data"), selected="Zoom only", width="100%"))
+                           )
+                   ),
+                   actionButton(ns("btn_den_settings"), "Additional settings", icon("gear"), class="btn-block")
+            )
           ),
           title="Distribution", status="primary", solidHeader=TRUE, width=4, collapsible=TRUE, collapsed=TRUE
         )
@@ -85,7 +107,19 @@ dbmodUI <- function(id, tab_name){
                    selectizeInput(ns("dec_pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%"),
                    selectizeInput(ns("dec_transform"), label=NULL, choices=c("", "Log", "Square root"), selected="", width="100%")
             ),
-            column(6, selectizeInput(ns("dec_facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')))
+            column(6,
+                   selectizeInput(ns("dec_facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')),
+                   bsModal(ns("dec_settings"), "Decadal change additional settings", ns("btn_dec_settings"), size="large",
+                           fluidRow(
+                             column(3, selectInput(ns("dec_facet_scales"), "Axis scales", choices=axis_scales, selected="fixed", width="100%")),
+                             column(3, sliderInput(ns("dec_alpha"), "Semi-transparency", min=0.1, max=1, value=1, step=0.1, sep="", width="100%")),
+                             column(3, selectInput(ns("dec_boxplot_type"), "Observations", choices=c("Box plot", "Strip chart", "Overlay"),
+                                                   selected="Box plot", width="100%")),
+                             column(3, checkboxInput(ns("dec_jitter"), "Jitter points", FALSE, width="100%"))
+                           )
+                   ),
+                   actionButton(ns("btn_dec_settings"), "Additional settings", icon("gear"), class="btn-block")
+            )
           ),
           title="Decadal change", status="primary", solidHeader=TRUE, width=12, collapsible=TRUE, collapsed=TRUE
         )
@@ -109,10 +143,11 @@ dbmodUI <- function(id, tab_name){
   
 }
 
-dbmod <- function(input, output, session, data, variable, alpha, showLines, jitterPoints, facetScales){
+dbmod <- function(input, output, session, data){
   ns <- session$ns
   source("mod_utils.R", local=TRUE)
   
+  variable <- reactive({ as.character(data()$Var[1]) })
   stat <- reactive({ tail(names(data()), 1) })
   d <- reactive({ plotDataPrep(input$transform, input$pooled_vars, input$colorby, input$facetby, stat()) })
   d_dec <- reactive({ plotDataPrep(input$dec_transform, input$dec_pooled_vars, input$dec_colorby, input$dec_facetby, stat()) })
@@ -146,7 +181,7 @@ dbmod <- function(input, output, session, data, variable, alpha, showLines, jitt
     filter(d(), !rv_plots$keeprows)
   })
   
-  preventPlot <- reactive({ nrow(d())==0 | nrow(d())!=length(rv_plots$keeprows) | d()$Var[1]!=variable })
+  preventPlot <- reactive({ nrow(d())==0 | nrow(d())!=length(rv_plots$keeprows) | d()$Var[1]!=variable() })
   plotHeight <- reactive({ if(preventPlot()) 0 else 400 })
   
   plotInteraction <- reactive({ interact(names(d())) })
@@ -159,18 +194,27 @@ dbmod <- function(input, output, session, data, variable, alpha, showLines, jitt
     grp <- grp[grp %in% names(d_dec())]
     mutate(d_dec(), Decade=factor(paste0(Year - Year %% 10, "s"))) %>% group_by_(.dots=c(grp, "Decade")) %>% select(-Year)
   })
-  preventPlot_dec <- reactive({ nrow(keep_dec())==0 | keep_dec()$Var[1]!=variable })
+  preventPlot_dec <- reactive({ nrow(keep_dec())==0 | keep_dec()$Var[1]!=variable() })
   
   distPlot <- function(type, limits){
-    #if(preventPlot()) return()
-    g <- ggplot(data=d_den(), aes_string(stat(), fill=den_colorby(), colour=den_colorby(), group=den_plotInteraction()))
-    if(type=="density") g <- g + geom_line(stat="density", size=1) else g <- g + geom_histogram(size=1, position="dodge")
-    if(!is.null(limits[[1]]) & !is.null(limits[[2]])) g <- g + xlim(limits[[1]]) + ylim(limits[[2]]) #+ scale_y_continuous(expand = c(0, 0.5))
-    g <- g + theme_bw(base_size=14)
+    if(is.null(den_colorby())) clr <- "white" else clr <- "black"
+    g <- ggplot(data=d_den(), aes_string(stat(), group=den_plotInteraction()))
+    if(type=="density"){
+      g <- g + geom_line(aes_string(colour=den_colorby()), stat="density", alpha=input$den_alpha)
+    } else {
+      g <- g + geom_histogram(aes_string(fill=den_colorby()), colour=clr, position="dodge", alpha=input$den_alpha, bins=input$den_bins)
+    }
+    if(!is.null(limits[[1]]) & !is.null(limits[[2]])){
+      if(input$den_zoom=="Zoom only") g <- g + coord_cartesian(xlim=limits[[1]])
+      if(input$den_zoom=="Subset data") g <- g + xlim(limits[[1]])
+    }
+    g <- g + theme_bw(base_size=14) #+ scale_y_continuous(expand = c(0, 0.5))
     
-    if(!is.null(den_colorvec())) g <- g + scale_colour_manual(values=den_colorvec(), limits=levels(d_den()[[den_colorby()]])) +
+    if(!is.null(den_colorvec()))
+      g <- g + scale_colour_manual(values=den_colorvec(), limits=levels(d_den()[[den_colorby()]])) +
       scale_fill_manual(values=den_colorvec(), limits=levels(d_den()[[den_colorby()]]))
-    if(input$den_facetby!="") g <- g + facet_wrap(as.formula(paste0("~", input$den_facetby)), scales=facetScales())
+    if(input$den_facetby!="")
+      g <- g + facet_wrap(as.formula(paste0("~", input$den_facetby)), scales=input$den_facet_scales)
     g + plottheme
   }
   
@@ -189,7 +233,7 @@ dbmod <- function(input, output, session, data, variable, alpha, showLines, jitt
     decadal <- !type %in% ann.types
     if(!decadal && preventPlot()) return()
     if(decadal && preventPlot_dec()) return()
-    if((decadal & type=="boxplot") || (!decadal & jitterPoints())) pos <- position_jitter(width=0.2, height=0) else pos <- "identity"
+    if((decadal & type=="boxplot") || (!decadal & input$ts_jitter)) pos <- position_jitter(width=0.2, height=0) else pos <- "identity"
     if(decadal && !is.null(dec_colorby())) pos <- position_jitterdodge(jitter.width=0.2, jitter.height=0)
     
     grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
@@ -218,30 +262,49 @@ dbmod <- function(input, output, session, data, variable, alpha, showLines, jitt
       pInteract <- plotInteraction()
       clrvec <- colorvec()
       fctby <- input$facetby
+      fctscales <- input$ts_facet_scales
+      alpha <- input$ts_alpha
     } else {
       d_source <- d_keep
       clrby <- dec_colorby()
       pInteract <- dec_plotInteraction()
       clrvec <- dec_colorvec()
       fctby <- input$dec_facetby
+      fctscales <- input$dec_facet_scales
+      alpha <- input$dec_alpha
     }
-      
-    g <- ggplot(data=d_source, aes_string(x, statname, colour=clrby))
-    g2 <- g + geom_boxplot() + geom_point(position=pos)  +
-      geom_boxplot(size=1) + geom_point(position=pos, size=2)
+    alphaHalf <- alpha/2
     
-    if(!decadal && showLines()) g <- g + geom_line(data=d_keep, aes_string(group=pInteract), alpha=alpha())
+    if(type=="barplot"){
+      g <- ggplot(data=d_source, aes_string(x, statname, fill=clrby))
+    } else {
+      g <- ggplot(data=d_source, aes_string(x, statname, colour=clrby))
+    }
+    
+    if(!decadal && input$ts_lines) g <- g + geom_line(data=d_keep, aes_string(group=pInteract), alpha=alpha)
     
     if(!decadal){
-      g <- g + geom_point(data=d_keep, size=3, alpha=alpha(), position=pos)
-      if(type=="annual-raw") g <- g + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.25)
+      g <- g + geom_point(data=d_keep, size=3, alpha=alpha, position=pos)
+      if(type=="annual-raw") g <- g + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.3)
     } else {
       if(type=="boxplot"){
+        doBox <- input$dec_boxplot_type %in% c("Box plot", "Overlay")
+        doStrip <- input$dec_boxplot_type %in% c("Strip chart", "Overlay")
+        g2 <- g
+        if(doBox) g2 <- g2 + geom_boxplot(alpha=alpha)
+        if(doStrip) g2 <- g2 + geom_point(position=pos, alpha=alpha)
         if(nrow(keep_dec())==length(rv_plots$dec_keeprows)){
           if(!is.null(rv_plots$dec_holdBrush) | !is.null(rv_plots$dec_holdClick)){
-            if(any(rv_plots$dec_keeprows)) d_keep2 <- d_keep[rv_plots$dec_keeprows,] else d_keep2 <- d_keep
-            g <- g + geom_boxplot() + geom_point(position=pos) +
-              geom_boxplot(data=d_keep2, size=1) + geom_point(data=d_keep2, position=pos, size=2)
+            if(any(rv_plots$dec_keeprows)){
+              d_keep2 <- d_keep[rv_plots$dec_keeprows,]
+              d_keep <- setdiff(d_keep, d_keep2)
+            } else {
+              d_keep2 <- d_keep
+            }
+            if(doBox) g <- g + geom_boxplot(alpha=alphaHalf)
+            if(doStrip) g <- g + geom_point(position=pos, alpha=alphaHalf)
+            if(doBox) g <- g + geom_boxplot(data=d_keep2, alpha=alpha)
+            if(doStrip) g <- g + geom_point(data=d_keep2, position=pos, alpha=alpha)
           } else {
             g <- g2
           }
@@ -249,13 +312,19 @@ dbmod <- function(input, output, session, data, variable, alpha, showLines, jitt
           g <- g2
         }
       }
-      if(type=="barplot") g <- g + geom_bar(stat="identity")
+      if(type=="barplot") g <- g + geom_bar(stat="identity", alpha=alpha)
     }
     
     g <- g + coord_cartesian(xlim=limits[[1]], ylim=limits[[2]]) + theme_bw(base_size=14)
     
-    if(!is.null(clrvec)) g <- g + scale_colour_manual(values=clrvec, limits=levels(d_source[[clrby]]))
-    if(fctby!="") g <- g + facet_wrap(as.formula(paste0("~", fctby)), scales=facetScales())
+    if(!is.null(clrvec)){
+      if(type=="barplot"){
+        g <- g + scale_fill_manual(values=clrvec, limits=levels(d_source[[clrby]]))
+      } else {
+        g <- g + scale_colour_manual(values=clrvec, limits=levels(d_source[[clrby]]))
+      }
+    }
+    if(fctby!="") g <- g + facet_wrap(as.formula(paste0("~", fctby)), scales=fctscales)
     g + plottheme
     #})
   }
