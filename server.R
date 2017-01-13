@@ -6,8 +6,6 @@ library(ggplot2)
 
 lon <- -155
 lat <- 65
-fmz <- readOGR("shapefiles/FireManagementZonesV2.shp", verbose=FALSE)
-flam <- readOGR("shapefiles/flam_polygon.shp", verbose=FALSE)
 tab_ids <- c("burnarea", "firefreq", "firesize", "vegarea", "vegage")
 mods <- paste0("mod_", tab_ids)
 
