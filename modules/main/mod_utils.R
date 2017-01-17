@@ -62,8 +62,7 @@ mouseInfo <- function(clk, dblclk, hov, brush){
   )
 }
 
-plotDataPrep <- function(trans=NULL, pooled, col, facet, stat){
-  x <- data()
+plotDataPrep <- function(x, trans=NULL, pooled, col, facet, stat){
   if(!is.null(trans) && trans!=""){
     if(trans=="Log") x <- mutate_(x, Transformed=lazyeval::interp(~log(x+1), x=as.name(stat)))
     if(trans=="Square root") x <- mutate_(x, Transformed=lazyeval::interp(~sqrt(x), x=as.name(stat)))

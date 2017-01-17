@@ -3,17 +3,7 @@ mainModUI <- function(id, tab_name){
 
     tabItem(tabName=tab_name,
       fluidRow( # Row 1
-        tabBox( # Annual time series tab box
-          tabPanel("Cumulative",
-                   plotOutput(ns("plot_ts2"), height="auto", click=ns("plot_ts2_clk"), dblclick=ns("plot_ts2_dblclk"), hover=ns("plot_ts2_hov"),
-                              brush=brushOpts(id=ns("plot_ts2_brush"))), value=ns("cumulative")
-          ),
-          tabPanel("Raw Observations",
-                   plotOutput(ns("plot_ts1"), height="auto", click=ns("plot_ts1_clk"), dblclick=ns("plot_ts1_dblclk"), hover=ns("plot_ts1_hov"),
-                              brush=brushOpts(id=ns("plot_ts1_brush"))), value=ns("annual")
-          ),
-          ns(id="box_ts"), selected=ns("annual"), title="Time series", width=8, side="right"
-        ),
+        column(8, tsModUI(id=ns("mod_ts"))),
         tabBox( # Distributions tab box
           tabPanel("Histogram",
                    plotOutput(ns("plot_den2"), height="auto", click=ns("plot_den2_clk"), dblclick=ns("plot_den2_dblclk"), hover=ns("plot_den2_hov"),
@@ -27,36 +17,7 @@ mainModUI <- function(id, tab_name){
         )
       ),
       fluidRow( # Row 2
-        box( # Annual time series inputs
-          fluidRow(
-            column(4,
-                   selectizeInput(ns("colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
-                   selectizeInput(ns("pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%"),
-                   selectizeInput(ns("transform"), label=NULL, choices=c("", "Log", "Square root"), selected="", width="100%")
-            ),
-            column(4,
-                   selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')),
-                   bsModal(ns("ts_settings"), "Annual time series additional settings", ns("btn_ts_settings"), size="large",
-                           fluidRow(
-                             column(3, selectInput(ns("ts_facet_scales"), "Axis scales", choices=axis_scales, selected="fixed", width="100%")),
-                             column(3, sliderInput(ns("ts_alpha"), "Semi-transparency", min=0.1, max=1, value=1, step=0.1, sep="", width="100%")),
-                             column(3, checkboxInput(ns("ts_lines"), "Connect points with lines", FALSE, width="100%")),
-                             column(3, checkboxInput(ns("ts_jitter"), "Jitter points", FALSE, width="100%"))
-                           )
-                   ),
-                   actionButton(ns("btn_ts_settings"), "Additional settings", icon("gear"), class="btn-block")
-                   ),
-            column(4,
-                   actionButton(ns("exclude_toggle"), "Toggle selected points", class="btn-block"),
-                   actionButton(ns("exclude_reset"), "Reset points", class="btn-block"),
-                   uiOutput(ns("btn_modal_table"))
-            )
-          ),
-          bsModal(ns("modal_table"), "Selected observations", ns("btn_modal_table"), size = "large",
-                  div(DT::dataTableOutput(ns('Selected_obs')), style="font-size: 100%")
-          ),
-          title="Time series", status="primary", solidHeader=TRUE, width=8, collapsible=TRUE, collapsed=TRUE
-        ),
+
         box( # Distributions inputs
           fluidRow(
             column(6,
@@ -127,10 +88,6 @@ mainModUI <- function(id, tab_name){
       br(),
       fluidRow( # Row 5 - feedback for testing purposes - remove later
         box(
-        column(8,
-               "Mouse feedback for annual time series", verbatimTextOutput(ns("info_ts1")),
-               "Mouse feedback for cumulative time series", verbatimTextOutput(ns("info_ts2"))
-        ),
         column(4,
                "Mouse feedback for period density plot", verbatimTextOutput(ns("info_den1")),
                "Mouse feedback for period histogram plot", verbatimTextOutput(ns("info_den2")),
@@ -145,46 +102,31 @@ mainModUI <- function(id, tab_name){
 
 mainMod <- function(input, output, session, data){
   ns <- session$ns
-  source("mod_utils.R", local=TRUE)
   
   variable <- reactive({ as.character(data()$Var[1]) })
   stat <- reactive({ tail(names(data()), 1) })
-  d <- reactive({ plotDataPrep(input$transform, input$pooled_vars, input$colorby, input$facetby, stat()) })
-  d_dec <- reactive({ plotDataPrep(input$dec_transform, input$dec_pooled_vars, input$dec_colorby, input$dec_facetby, stat()) })
-  d_den <- reactive({ plotDataPrep(input$den_transform, input$den_pooled_vars, input$den_colorby, input$den_facetby, stat()) })
   
-  rv_plots <- reactiveValues(xts1=NULL, yts1=NULL, xts2=NULL, yts2=NULL,
+  d_dec <- reactive({ plotDataPrep(data(), input$dec_transform, input$dec_pooled_vars, input$dec_colorby, input$dec_facetby, stat()) })
+  d_den <- reactive({ plotDataPrep(data(), input$den_transform, input$den_pooled_vars, input$den_colorby, input$den_facetby, stat()) })
+  
+  rv_plots <- reactiveValues(
                              xden1=NULL, yden1=NULL, xden2=NULL, yden2=NULL,
-                             keeprows=rep(TRUE, nrow(isolate(d()))),
+                             
                              xdec1=NULL, ydec1=NULL, xdec2=NULL, ydec2=NULL,
-                             dec_keeprows=rep(TRUE, nrow(isolate(d()))),
+                             dec_keeprows=rep(TRUE, nrow(isolate(d_dec()))),
                              dec_holdClick=NULL, dec_holdBrush=NULL)
   
   source("mod_observers.R", local=TRUE)
   
-  colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   den_colorby <- reactive({ if(input$den_colorby=="") NULL else input$den_colorby })
   dec_colorby <- reactive({ if(input$dec_colorby=="") NULL else input$dec_colorby })
   
-  colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   den_colorvec <- reactive({ if(is.null(den_colorby())) NULL else tolpal(length(unique(d_den()[[den_colorby()]]))) })
   dec_colorvec <- reactive({ if(is.null(dec_colorby())) NULL else tolpal(length(unique(d_dec()[[dec_colorby()]]))) })
   
-  keep    <- reactive({
-    req(rv_plots$keeprows)
-    if(length(rv_plots$keeprows) != nrow(d())) return()
-    filter(d(), rv_plots$keeprows)
-  })
-  exclude <- reactive({
-    req(rv_plots$keeprows)
-    if(length(rv_plots$keeprows) != nrow(d())) return()
-    filter(d(), !rv_plots$keeprows)
-  })
-  
-  preventPlot <- reactive({ nrow(d())==0 | nrow(d())!=length(rv_plots$keeprows) | d()$Var[1]!=variable() })
+  preventPlot <- reactive({ FALSE })# nrow(d())==0 | nrow(d())!=length(rv_plots$keeprows) | d()$Var[1]!=variable() })
   plotHeight <- reactive({ if(preventPlot()) 0 else 400 })
   
-  plotInteraction <- reactive({ interact(names(d())) })
   den_plotInteraction <- reactive({ interact(names(d_den())) })
   dec_plotInteraction <- reactive({ interact(names(d_dec())) })
   
@@ -199,40 +141,13 @@ mainMod <- function(input, output, session, data){
   source("mod_plots.R", local=TRUE)  
   output$plot_den1 <- renderPlot({ distPlot("density", list(rv_plots$xden1, rv_plots$yden1)) }, height=function() plotHeight())
   output$plot_den2 <- renderPlot({ distPlot("histogram", list(rv_plots$xden2, rv_plots$yden2)) }, height=function() plotHeight())
-  output$plot_ts1 <- renderPlot({ tsPlot("annual-raw", list(rv_plots$xts1, rv_plots$yts1)) }, height=function() plotHeight())
-  output$plot_ts2 <- renderPlot({ tsPlot("annual-cumulative", list(rv_plots$xts2, rv_plots$yts2)) }, height=function() plotHeight())
-  output$plot_dec1 <- renderPlot({ tsPlot("boxplot", list(rv_plots$xdec1, rv_plots$ydec1)) }, height=function() plotHeight())
-  output$plot_dec2 <- renderPlot({ tsPlot("barplot", list(rv_plots$xdec2, rv_plots$ydec2)) }, height=function() plotHeight())
+  output$plot_dec1 <- renderPlot({ decPlot("boxplot", list(rv_plots$xdec1, rv_plots$ydec1)) }, height=function() plotHeight())
+  output$plot_dec2 <- renderPlot({ decPlot("barplot", list(rv_plots$xdec2, rv_plots$ydec2)) }, height=function() plotHeight())
   
-  output$info_ts1 <- renderText({ mouseInfo(input$plot_ts1_clk, input$plot_ts1_dblclk, input$plot_ts1_hov, input$plot_ts1_brush) })
-  output$info_ts2 <- renderText({ mouseInfo(input$plot_ts2_clk, input$plot_ts2_dblclk, input$plot_ts2_hov, input$plot_ts1_brush) })
   output$info_den1 <- renderText({ mouseInfo(input$plot_den1_clk, input$plot_den1_dblclk, input$plot_den1_hov, input$plot_den1_brush) })
   output$info_den2 <- renderText({ mouseInfo(input$plot_den2_clk, input$plot_den2_dblclk, input$plot_den2_hov, input$plot_den2_brush) })
   output$info_dec1 <- renderText({ mouseInfo(input$plot_dec1_clk, input$plot_dec1_dblclk, input$plot_dec1_hov, input$plot_dec1_brush) })
   output$info_dec2 <- renderText({ mouseInfo(input$plot_dec2_clk, input$plot_dec2_dblclk, input$plot_dec2_hov, input$plot_dec2_brush) })
-  
-  output$Selected_obs <- DT::renderDataTable({
-    # ignore input$plot1_click for table updates; click obs-toggling removes all selection
-    if(is.null(input$plot_ts1_brush)){
-      x <- slice(d(), 0)
-    } else {
-      x <- brushedPoints(d(), input$plot_ts1_brush, allRows=TRUE)
-    }
-    if(preventPlot() || nrow(x)==0 || nrow(filter(x, selected_))==0) return()
-    x <- mutate(x, included_=rv_plots$keeprows) %>% filter(selected_) %>% mutate(selected_=NULL)
-    x <- mutate(x, included_=paste0(x[[input$colorby]], "_", x$included_))
-    clrs <- tableRowColors(x, input$colorby, colorvec(), "35")
-    
-    DT::datatable(x, options=list(
-      lengthMenu=list(c(5, 10, 25), c('5', '10', '25')), pageLength=5, searching=FALSE,
-      columnDefs=list(list(visible=FALSE, targets=ncol(x))))) %>%
-      formatStyle(columns="included_", backgroundColor=clrs, target='row')
-  })
-  
-  output$btn_modal_table <- renderUI({
-    if(is.null(input$plot_ts1_brush)) return()
-    actionButton(ns("btn_modal_table"), "Show selections", icon("list"), class="btn-block")
-  })
   
   output$decStatsBoxes <- renderUI({
     if(is.null(rv_plots$dec_holdBrush) && is.null(rv_plots$dec_holdClick)){
@@ -274,12 +189,12 @@ mainMod <- function(input, output, session, data){
     )
   })
   
-  outputOptions(output, "plot_ts1", suspendWhenHidden=FALSE)
-  outputOptions(output, "plot_ts2", suspendWhenHidden=FALSE)
   outputOptions(output, "plot_den1", suspendWhenHidden=FALSE)
   outputOptions(output, "plot_den2", suspendWhenHidden=FALSE)
   outputOptions(output, "plot_dec1", suspendWhenHidden=FALSE)
   outputOptions(output, "plot_dec2", suspendWhenHidden=FALSE)
   #outputOptions(output, "Selected_obs", suspendWhenHidden=FALSE) # something wrong with reactive behavior here
   outputOptions(output, "decStatsBoxes", suspendWhenHidden=FALSE)
+  
+  callModule(tsMod, "mod_ts", data=data)
 }

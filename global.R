@@ -11,6 +11,10 @@ pooled_options <- c("Average observations", "Unique observations")
 axis_scales <- c("Fixed"="fixed", "Free"="free", "Free X"="free_x", "Free Y"="free_y")
 
 source("override.R")
-source("mod.R")
+
+# load modules
+source("modules/main/mod_utils.R")
+source("modules/main/mod.R")
+source("modules/timeseries/mod_ts.R")
 
 enableBookmarking(store="server")
