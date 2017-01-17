@@ -44,11 +44,11 @@ function(request){
               )
       ),
       tabItems(
-        dbmodUI(id="mod_burnarea", tab_name="burnarea"),
-        dbmodUI(id="mod_firefreq", tab_name="firefreq"),
-        dbmodUI(id="mod_firesize", tab_name="firesize"),
-        dbmodUI(id="mod_vegarea", tab_name="vegarea"),
-        dbmodUI(id="mod_vegage", tab_name="vegage")
+        mainModUI(id="mod_burnarea", tab_name="burnarea"),
+        mainModUI(id="mod_firefreq", tab_name="firefreq"),
+        mainModUI(id="mod_firesize", tab_name="firesize"),
+        mainModUI(id="mod_vegarea", tab_name="vegarea"),
+        mainModUI(id="mod_vegage", tab_name="vegage")
       )
     ),
     title="JFSP"

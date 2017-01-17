@@ -1,4 +1,4 @@
-dbmodUI <- function(id, tab_name){
+mainModUI <- function(id, tab_name){
   ns <- NS(id)
 
     tabItem(tabName=tab_name,
@@ -143,7 +143,7 @@ dbmodUI <- function(id, tab_name){
   
 }
 
-dbmod <- function(input, output, session, data){
+mainMod <- function(input, output, session, data){
   ns <- session$ns
   source("mod_utils.R", local=TRUE)
   
@@ -211,19 +211,6 @@ dbmod <- function(input, output, session, data){
   output$info_dec1 <- renderText({ mouseInfo(input$plot_dec1_clk, input$plot_dec1_dblclk, input$plot_dec1_hov, input$plot_dec1_brush) })
   output$info_dec2 <- renderText({ mouseInfo(input$plot_dec2_clk, input$plot_dec2_dblclk, input$plot_dec2_hov, input$plot_dec2_brush) })
   
-  # not suspending when hidden does not work within modules.
-  # Desipite unique prepended module IDs, the ids still seem to conflict.
-  
-  #outputOptions(output, "plot_den2", suspendWhenHidden=FALSE)
-  #outputOptions(output, "plot_ts1", suspendWhenHidden=FALSE)
-  #outputOptions(output, "plot_ts2", suspendWhenHidden=FALSE)
-  
-  #outputOptions(output, "plot_den1", suspendWhenHidden=FALSE)
-  #outputOptions(output, "info_ts1", suspendWhenHidden=FALSE)
-  #outputOptions(output, "info_ts2", suspendWhenHidden=FALSE)
-  #outputOptions(output, "info_den1", suspendWhenHidden=FALSE)
-  #outputOptions(output, "info_den2", suspendWhenHidden=FALSE)
-  
   output$Selected_obs <- DT::renderDataTable({
     # ignore input$plot1_click for table updates; click obs-toggling removes all selection
     if(is.null(input$plot_ts1_brush)){
@@ -287,4 +274,12 @@ dbmod <- function(input, output, session, data){
     )
   })
   
+  outputOptions(output, "plot_ts1", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot_ts2", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot_den1", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot_den2", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot_dec1", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot_dec2", suspendWhenHidden=FALSE)
+  #outputOptions(output, "Selected_obs", suspendWhenHidden=FALSE) # something wrong with reactive behavior here
+  outputOptions(output, "decStatsBoxes", suspendWhenHidden=FALSE)
 }
