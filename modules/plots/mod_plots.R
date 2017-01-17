@@ -1,56 +1,66 @@
-tsModUI <- function(id){
+tsModUI <- function(id, titles, values=titles, width=12){
   ns <- NS(id)
+
+  sel <- values[1]
+  plotId <- paste0("plot", seq_along(titles))
+  tb <- map(rev(seq_along(titles)), ~tabPanel(titles[.x],
+           plotOutput(ns(plotId[.x]), height="auto",
+                      click=ns(paste0(plotId[.x], "_clk")), dblclick=ns(paste0(plotId[.x], "_dblclk")),
+                      hover=ns(paste0(plotId[.x], "_hov")), brush=brushOpts(id=ns(paste0(plotId[.x], "_brush")))),
+           value=ns(values[.x]))
+           )
   
-  tagList(
-    tabBox( # Annual time series tab box
-     tabPanel("Cumulative",
-              plotOutput(ns("plot_ts2"), height="auto", click=ns("plot_ts2_clk"), dblclick=ns("plot_ts2_dblclk"), hover=ns("plot_ts2_hov"),
-                         brush=brushOpts(id=ns("plot_ts2_brush"))), value=ns("cumulative")
-     ),
-     tabPanel("Raw Observations",
-              plotOutput(ns("plot_ts1"), height="auto", click=ns("plot_ts1_clk"), dblclick=ns("plot_ts1_dblclk"), hover=ns("plot_ts1_hov"),
-                         brush=brushOpts(id=ns("plot_ts1_brush"))), value=ns("annual")
-     ),
-     ns(id="box_ts"), selected=ns("annual"), title="Time series", width=8, side="right"
-    ),
+  inputsBox <- function(grp, facet=grp, pooled, transforms=NULL, addLines=TRUE, togglePoints=TRUE, width){
+    transformsInput <- if(!is.null(transforms)) 
+      selectizeInput(ns("transform"), label="Apply transform", choices=c("", transforms), selected="", width="100%") else NULL
+    addLinesInput <- if(addLines) checkboxInput(ns("addLines"), "Connect points with lines", FALSE, width="100%") else NULL
+    togInput <- if(togglePoints)
+      column(4,
+           actionButton(ns("exclude_toggle"), "Toggle selected points", class="btn-block"),
+           actionButton(ns("exclude_reset"), "Reset points", class="btn-block"),
+           uiOutput(ns("btn_modal_table"))) else NULL
+    togModal <- if(togglePoints)
+      bsModal(ns("modal_table"), "Selected observations", ns("btn_modal_table"), size = "large",
+            div(DT::dataTableOutput(ns('Selected_obs')), style="font-size: 100%")) else NULL
+            
     box(  # Annual time series inputs
       fluidRow(
         column(4,
-               selectizeInput(ns("colorby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Color by...')),
-               selectizeInput(ns("pooled_vars"), label=NULL, choices=pooled_options, selected=pooled_options[1], width="100%"),
-               selectizeInput(ns("transform"), label=NULL, choices=c("", "Log", "Square root"), selected="", width="100%")
+               selectizeInput(ns("colorby"), label="Color by", choices=grp, selected="", width="100%", options=list(placeholder='Color by...')),
+               selectizeInput(ns("facetby"), label="Facet by", choices=facet, selected="", width="100%", options=list(placeholder='Facet by...')),
+               selectizeInput(ns("pooled_vars"), label="Other variables", choices=pooled, selected=pooled[1], width="100%")
         ),
         column(4,
-               selectizeInput(ns("facetby"), label=NULL, choices=groupby_vars, selected="", width="100%", options=list(placeholder='Facet by...')),
-               bsModal(ns("ts_settings"), "Annual time series additional settings", ns("btn_ts_settings"), size="large",
+               transformsInput,
+               bsModal(ns("settings"), "Annual time series additional settings", ns("btn_settings"), size="large",
                        fluidRow(
-                         column(3, selectInput(ns("ts_facet_scales"), "Axis scales", choices=axis_scales, selected="fixed", width="100%")),
-                         column(3, sliderInput(ns("ts_alpha"), "Semi-transparency", min=0.1, max=1, value=1, step=0.1, sep="", width="100%")),
-                         column(3, checkboxInput(ns("ts_lines"), "Connect points with lines", FALSE, width="100%")),
-                         column(3, checkboxInput(ns("ts_jitter"), "Jitter points", FALSE, width="100%"))
+                         column(3, selectInput(ns("facet_scales"), "Axis scales", choices=axis_scales, selected="fixed", width="100%")),
+                         column(3, sliderInput(ns("alpha"), "Semi-transparency", min=0.1, max=1, value=1, step=0.1, sep="", width="100%")),
+                         column(3, checkboxInput(ns("jitter"), "Jitter points", FALSE, width="100%")),
+                         column(3, addLinesInput)
                        )
                ),
-               actionButton(ns("btn_ts_settings"), "Additional settings", icon("gear"), class="btn-block")
+               actionButton(ns("btn_settings"), "Additional settings", icon("gear"), class="btn-block")
         ),
-        column(4,
-               actionButton(ns("exclude_toggle"), "Toggle selected points", class="btn-block"),
-               actionButton(ns("exclude_reset"), "Reset points", class="btn-block"),
-               uiOutput(ns("btn_modal_table"))
-        )
+        togInput
       ),
-      bsModal(ns("modal_table"), "Selected observations", ns("btn_modal_table"), size = "large",
-              div(DT::dataTableOutput(ns('Selected_obs')), style="font-size: 100%")
-      ),
-      title="Time series", status="primary", solidHeader=TRUE, width=8, collapsible=TRUE, collapsed=TRUE
-    ),
-    "Mouse feedback for annual time series", verbatimTextOutput(ns("info_ts1")),
-    "Mouse feedback for cumulative time series", verbatimTextOutput(ns("info_ts2"))
+      togModal,
+      title="Time series", status="primary", solidHeader=TRUE, width=width, collapsible=TRUE, collapsed=TRUE
+    )
+  }
+  
+  tagList(
+    do.call(tabBox, c(tb, ns(id="box_ts"), selected=ns(sel), title="Time series", width=width, side="right")),
+    inputsBox(grp=groupby_vars, pooled=pooled_options, transforms=c("Log", "Square root"), width=width),
+    column(width,
+      "Mouse feedback for annual time series", verbatimTextOutput(ns("info1")),
+      "Mouse feedback for cumulative time series", verbatimTextOutput(ns("info2"))
+    )
   )
 }
 
-denModUI <- function(id){
+denModUI <- function(id, width=12){
   ns <- NS(id)
-  
   tagList(
     tabBox( # Distributions tab box
       tabPanel("Histogram",
@@ -61,7 +71,7 @@ denModUI <- function(id){
                plotOutput(ns("plot_den1"), height="auto", click=ns("plot_den1_clk"), dblclick=ns("plot_den1_dblclk"), hover=ns("plot_den1_hov"),
                           brush=brushOpts(id=ns("plot_den1_brush"), direction="x", resetOnNew=TRUE)), value=ns("density")
       ),
-      ns(id="box_den"), selected=ns("density"), title="Aggregate distribution", width=4, side="right"
+      ns(id="box_den"), selected=ns("density"), title="Aggregate distribution", width=width, side="right"
     ),
     box( # Distributions inputs
       fluidRow(
@@ -83,14 +93,16 @@ denModUI <- function(id){
                actionButton(ns("btn_den_settings"), "Additional settings", icon("gear"), class="btn-block")
         )
       ),
-      title="Distribution", status="primary", solidHeader=TRUE, width=4, collapsible=TRUE, collapsed=TRUE
+      title="Distribution", status="primary", solidHeader=TRUE, width=width, collapsible=TRUE, collapsed=TRUE
     ),
-    "Mouse feedback for period density plot", verbatimTextOutput(ns("info_den1")),
-    "Mouse feedback for period histogram plot", verbatimTextOutput(ns("info_den2"))
+    column(width,
+      "Mouse feedback for period density plot", verbatimTextOutput(ns("info_den1")),
+      "Mouse feedback for period histogram plot", verbatimTextOutput(ns("info_den2"))
+    )
   )
 }
 
-decModUI <- function(id){
+decModUI <- function(id, width=12){
   ns <- NS(id)
   
   tagList(
@@ -109,7 +121,7 @@ decModUI <- function(id){
                ),
                value=ns("dec_boxplot")
       ),
-      ns(id="box_dec"), selected=ns("dec_boxplot"), title="Decadal change", width=12, side="right"
+      ns(id="box_dec"), selected=ns("dec_boxplot"), title="Decadal change", width=width, side="right"
     ),
     box( # Decadal change inputs
       fluidRow(
@@ -132,10 +144,12 @@ decModUI <- function(id){
                actionButton(ns("btn_dec_settings"), "Additional settings", icon("gear"), class="btn-block")
         )
       ),
-      title="Decadal change", status="primary", solidHeader=TRUE, width=12, collapsible=TRUE, collapsed=TRUE
+      title="Decadal change", status="primary", solidHeader=TRUE, width=width, collapsible=TRUE, collapsed=TRUE
     ),
-    "Mouse feedback for decadal box plot", verbatimTextOutput(ns("info_dec1")),
-    "Mouse feedback for decadal bar plot", verbatimTextOutput(ns("info_dec2"))
+    column(width,
+      "Mouse feedback for decadal box plot", verbatimTextOutput(ns("info_dec1")),
+      "Mouse feedback for decadal bar plot", verbatimTextOutput(ns("info_dec2"))
+    )
   )
 }
 
@@ -203,19 +217,19 @@ tsMod <- function(input, output, session, data){
   stat <- reactive({ tail(names(data()), 1) })
   d <- reactive({ plotDataPrep(data(), input$transform, input$pooled_vars, input$colorby, input$facetby, stat()) })
   
-  rv_plots <- reactiveValues(xts1=NULL, yts1=NULL, xts2=NULL, yts2=NULL, keeprows=rep(TRUE, nrow(isolate(d()))))
+  rv_plots <- reactiveValues(x1=NULL, y1=NULL, x2=NULL, y2=NULL, keeprows=rep(TRUE, nrow(isolate(d()))))
   
   # Time series plot annual
   
   # Doubleclk observation
-  observeEvent(input$plot_ts1_dblclk, {
-    brush <- input$plot_ts1_brush
+  observeEvent(input$plot1_dblclk, {
+    brush <- input$plot1_brush
     if (!is.null(brush)) {
-      rv_plots$xts1 <- c(brush$xmin, brush$xmax)
-      rv_plots$yts1 <- c(brush$ymin, brush$ymax)
+      rv_plots$x1 <- c(brush$xmin, brush$xmax)
+      rv_plots$y1 <- c(brush$ymin, brush$ymax)
     } else {
-      rv_plots$xts1 <- NULL
-      rv_plots$yts1 <- NULL
+      rv_plots$x1 <- NULL
+      rv_plots$y1 <- NULL
     }
   })
   
@@ -224,14 +238,14 @@ tsMod <- function(input, output, session, data){
   })
   
   # Toggle points that are clked
-  observeEvent(input$plot_ts1_clk, {
-    res <- nearPoints(d(), input$plot_ts1_clk, allRows=TRUE)
+  observeEvent(input$plot1_clk, {
+    res <- nearPoints(d(), input$plot1_clk, allRows=TRUE)
     rv_plots$keeprows <- xor(rv_plots$keeprows, res$selected_)
   })
   
   # Toggle points that are brushed, when button is clked
   observeEvent(input$exclude_toggle, {
-    res <- brushedPoints(d(), input$plot_ts1_brush, allRows=TRUE)
+    res <- brushedPoints(d(), input$plot1_brush, allRows=TRUE)
     rv_plots$keeprows <- xor(rv_plots$keeprows, res$selected_)
   })
   
@@ -243,18 +257,16 @@ tsMod <- function(input, output, session, data){
   # Time series plot cumulative
   
   # Doubleclk observation
-  observeEvent(input$plot_ts2_dblclk, {
-    brush <- input$plot_ts2_brush
+  observeEvent(input$plot2_dblclk, {
+    brush <- input$plot2_brush
     if (!is.null(brush)) {
-      rv_plots$xts2 <- c(brush$xmin, brush$xmax)
-      rv_plots$yts2 <- c(brush$ymin, brush$ymax)
+      rv_plots$x2 <- c(brush$xmin, brush$xmax)
+      rv_plots$y2 <- c(brush$ymin, brush$ymax)
     } else {
-      rv_plots$xts2 <- NULL
-      rv_plots$yts2 <- NULL
+      rv_plots$x2 <- NULL
+      rv_plots$y2 <- NULL
     }
   })
-  
-  #source("mod_observers.R", local=TRUE)
   
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
@@ -274,18 +286,18 @@ tsMod <- function(input, output, session, data){
   plotHeight <- reactive({ if(preventPlot()) 0 else 400 })
   plotInteraction <- reactive({ interact(names(d())) })
   
-  output$plot_ts1 <- renderPlot({ tsPlot("annual-raw", list(rv_plots$xts1, rv_plots$yts1)) }, height=function() plotHeight())
-  output$plot_ts2 <- renderPlot({ tsPlot("annual-cumulative", list(rv_plots$xts2, rv_plots$yts2)) }, height=function() plotHeight())
+  output$plot1 <- renderPlot({ tsPlot("annual-raw", list(rv_plots$x1, rv_plots$y1)) }, height=function() plotHeight())
+  output$plot2 <- renderPlot({ tsPlot("annual-cumulative", list(rv_plots$x2, rv_plots$y2)) }, height=function() plotHeight())
   
-  output$info_ts1 <- renderText({ mouseInfo(input$plot_ts1_clk, input$plot_ts1_dblclk, input$plot_ts1_hov, input$plot_ts1_brush) })
-  output$info_ts2 <- renderText({ mouseInfo(input$plot_ts2_clk, input$plot_ts2_dblclk, input$plot_ts2_hov, input$plot_ts1_brush) })
+  output$info1 <- renderText({ mouseInfo(input$plot1_clk, input$plot1_dblclk, input$plot1_hov, input$plot1_brush) })
+  output$info2 <- renderText({ mouseInfo(input$plot2_clk, input$plot2_dblclk, input$plot2_hov, input$plot2_brush) })
   
   output$Selected_obs <- DT::renderDataTable({
     # ignore input$plot1_click for table updates; click obs-toggling removes all selection
-    if(is.null(input$plot_ts1_brush)){
+    if(is.null(input$plot1_brush)){
       x <- slice(d(), 0)
     } else {
-      x <- brushedPoints(d(), input$plot_ts1_brush, allRows=TRUE)
+      x <- brushedPoints(d(), input$plot1_brush, allRows=TRUE)
     }
     if(preventPlot() || nrow(x)==0 || nrow(filter(x, selected_))==0) return()
     x <- mutate(x, included_=rv_plots$keeprows) %>% filter(selected_) %>% mutate(selected_=NULL)
@@ -299,12 +311,12 @@ tsMod <- function(input, output, session, data){
   })
   
   output$btn_modal_table <- renderUI({
-    if(is.null(input$plot_ts1_brush)) return()
+    if(is.null(input$plot1_brush)) return()
     actionButton(ns("btn_modal_table"), "Show selections", icon("list"), class="btn-block")
   })
   
-  outputOptions(output, "plot_ts1", suspendWhenHidden=FALSE)
-  outputOptions(output, "plot_ts2", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot1", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot2", suspendWhenHidden=FALSE)
   #outputOptions(output, "Selected_obs", suspendWhenHidden=FALSE) # something wrong with reactive behavior here
 }
 

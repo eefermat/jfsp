@@ -2,7 +2,7 @@ mainModUI <- function(id, tab_name){
   ns <- NS(id)
   tabItem(tabName=tab_name,
     fluidRow(
-      column(8, tsModUI(id=ns("mod_ts"))),
+      column(8, tsModUI(id=ns("mod_ts"), titles=c("Raw Observations", "Cumulative"), values=c("annual", "cumulative"))),
       column(4, denModUI(id=ns("mod_den")))
     ),
     fluidRow(decModUI(id=ns("mod_dec")))

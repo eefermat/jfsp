@@ -1,7 +1,7 @@
 # Time series - annual
 tsPlot <- function(type, limits){
   if(preventPlot()) return()
-  if(input$ts_jitter) pos <- position_jitter(width=0.2, height=0) else pos <- "identity"
+  if(input$jitter) pos <- position_jitter(width=0.2, height=0) else pos <- "identity"
   
   grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
   grp <- grp[grp %in% names(keep())]
@@ -20,15 +20,15 @@ tsPlot <- function(type, limits){
   pInteract <- plotInteraction()
   clrvec <- colorvec()
   fctby <- input$facetby
-  fctscales <- input$ts_facet_scales
-  alpha <- input$ts_alpha
+  fctscales <- input$facet_scales
+  alpha <- input$alpha
   alphaHalf <- alpha/2
   
   g <- ggplot(data=d_source, aes_string(x, statname, colour=clrby))
   
-  if(input$ts_lines) g <- g + geom_line(data=d_keep, aes_string(group=pInteract), alpha=alpha)
+  if(input$addLines) g <- g + geom_line(data=d_keep, aes_string(group=pInteract), alpha=alpha)
   
-  if(type=="annual-raw") ts_brush <- input$plot_ts1_brush else ts_brush <- input$plot_ts2_brush
+  if(type=="annual-raw") ts_brush <- input$plot1_brush else ts_brush <- input$plot2_brush
   g2 <- g
   g2 <- g2 + geom_point(data=d_keep, size=3, alpha=alpha, position=pos)
   if(type=="annual-raw") g2 <- g2 + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.3)
