@@ -15,6 +15,6 @@ source("override.R")
 # load modules
 source("modules/main/mod_utils.R")
 source("modules/main/mod.R")
-source("modules/timeseries/mod_ts.R")
+source("modules/plots/mod_plots.R")
 
 enableBookmarking(store="server")
