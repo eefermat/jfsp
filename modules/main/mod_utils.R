@@ -83,3 +83,57 @@ interact <- function(x){
   if(!length(x)) return()
   paste0("interaction(", paste0(x, collapse=","), ")")
 }
+
+inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main="Tab box with inputs box", width){
+  
+  
+  addLinesInput <- togInput <- togModal <- jitterInput <- binsInput <- zoomInput <- bpInput <- NULL
+  transformsInput <- if(!is.null(transforms)) 
+    selectizeInput(ns("transform"), label="Apply transform", choices=c("", transforms), selected="", width="100%") else NULL
+  
+  if(type=="ts"){
+    addLinesInput <- checkboxInput(ns("addLines"), "Connect points with lines", FALSE, width="100%")
+    togInput <- column(4,
+      actionButton(ns("exclude_toggle"), "Toggle selected points", class="btn-block"),
+      actionButton(ns("exclude_reset"), "Reset points", class="btn-block"),
+      uiOutput(ns("btn_modal_table")))
+    togModal <- bsModal(ns("modal_table"), "Selected observations", ns("btn_modal_table"), size = "large",
+      div(DT::dataTableOutput(ns('Selected_obs')), style="font-size: 100%"))
+  }
+  
+  if(type %in% c("ts", "dec")){
+    bpInput <- selectInput(ns("bptype"), "Observations", choices=c("Box plot", "Strip chart", "Overlay"),
+                selected="Box plot", width="100%")
+    jitterInput <- checkboxInput(ns("jitter"), "Jitter points", FALSE, width="100%")
+  }
+  
+  if(type=="den"){
+    binsInput <- sliderInput(ns("bins"), "Histogram bins (approx.)", min=5, max=30, value=10, step=5, sep="", width="100%")
+    zoomInput <- selectInput(ns("zoom"), "Zoom behavior", choices=c("Zoom only", "Subset data"), selected="Zoom only", width="100%")
+  }
+  
+  box(
+    fluidRow(
+      column(4,
+        selectizeInput(ns("colorby"), label="Color by", choices=grp, selected="", width="100%", options=list(placeholder='Color by...')),
+        selectizeInput(ns("facetby"), label="Facet by", choices=facet, selected="", width="100%", options=list(placeholder='Facet by...')),
+        selectizeInput(ns("pooled_vars"), label="Other variables", choices=pooled, selected=pooled[1], width="100%")
+      ),
+      column(4,
+        transformsInput,
+        bsModal(ns("settings"), paste(main, "additional settings"), ns("btn_settings"), size="large",
+          fluidRow(
+           column(3, sliderInput(ns("alpha"), "Semi-transparency", min=0.1, max=1, value=1, step=0.1, sep="", width="100%")),
+           column(3, selectInput(ns("facet_scales"), "Axis scales", choices=axis_scales, selected="fixed", width="100%")),
+           column(3, binsInput, zoomInput, bpInput, jitterInput),
+           column(3, addLinesInput)
+          )
+        ),
+        actionButton(ns("btn_settings"), "Additional settings", icon("gear"), class="btn-block")
+      ),
+      togInput
+    ),
+    togModal,
+    title=main, status="primary", solidHeader=TRUE, width=width, collapsible=TRUE, collapsed=TRUE
+  )
+}
