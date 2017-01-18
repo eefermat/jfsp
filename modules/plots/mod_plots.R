@@ -43,6 +43,7 @@ denModUI <- function(id, titles, values=titles, main="Tab box with inputs box", 
 decModUI <- function(id, titles, values=titles, main="Tab box with inputs box", mouselog=FALSE, width=12){
   ns <- NS(id)
   
+  trans <- c("Baseline anomalies", "Period anomalies", "Prior decade anomalies", "Log", "Square root")
   ml <- mouseLog(mouselog, ns, width)
   sel <- values[1]
   plotId <- paste0("plot", seq_along(titles))
@@ -61,7 +62,7 @@ decModUI <- function(id, titles, values=titles, main="Tab box with inputs box", 
   tagList(
     do.call(tabBox, c(tb, ns(id="tbox"), selected=ns(sel), title=main, width=width, side="right")),
     inputsBox(ns=ns, grp=groupby_vars, pooled=pooled_options,
-              transforms=c("Log", "Square root"), type="dec", main=main, width=width),
+              transforms=trans, type="dec", main=main, width=width),
     ml
   )
 }

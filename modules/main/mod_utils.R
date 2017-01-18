@@ -63,16 +63,44 @@ mouseInfo <- function(clk, dblclk, hov, brush){
 }
 
 plotDataPrep <- function(x, trans=NULL, pooled, col, facet, stat){
-  if(!is.null(trans) && trans!=""){
-    if(trans=="Log") x <- mutate_(x, Transformed=lazyeval::interp(~log(x+1), x=as.name(stat)))
-    if(trans=="Square root") x <- mutate_(x, Transformed=lazyeval::interp(~sqrt(x), x=as.name(stat)))
-    x <- select_(x, paste0("-", stat)) %>% rename_(.dots=setNames("Transformed", stat))
+  if(pooled=="Average observations"){
+    grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
+    grp <- c(grp[grp %in% c(col, facet)], "Var", "Year")
+    x <- group_by_(x, .dots=grp) %>% summarise_(Avg=lazyeval::interp(~round(mean(x)), x=as.name(stat))) %>% 
+      rename_(.dots=setNames("Avg", stat)) %>% ungroup
   }
-  if(pooled=="Unique observations") return(x)
-  grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
-  grp <- c(grp[grp %in% c(col, facet)], "Var", "Year")
-  group_by_(x, .dots=grp) %>% summarise_(Avg=lazyeval::interp(~round(mean(x)), x=as.name(stat))) %>% 
-    rename_(.dots=setNames("Avg", stat)) %>% ungroup
+  
+  if(!is.null(trans) && trans!=""){
+    drp <- paste0("-", stat)
+    grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
+    transforms <- c("Baseline anomalies", "Period anomalies", "Prior decade anomalies")
+    if(trans %in% transforms){
+      if(trans==transforms[1]){
+        y1 <- mutate(x, Decade=Year - Year %% 10)
+        y1 <- filter(y1, Decade==y1$Decade[1]) %>% select(-Decade)
+        grp <- c(grp[grp %in% c(col, facet)], "Var")
+      } else if(trans==transforms[2]){
+        y1 <- x
+        grp <- c(grp[grp %in% c(col, facet)], "Var")
+      } else if(trans==transforms[3]){
+        y1 <- mutate(x, Decade=Year - Year %% 10)
+        grp <- c(grp[grp %in% c(col, facet)], "Var", "Decade")
+      }
+      
+      
+      y2 <- group_by_(y1, .dots=grp) %>% summarise_(Avg=lazyeval::interp(~round(mean(x)), x=as.name(stat)))
+      if(trans==transforms[3]) x <- mutate(y1, Decade=Decade - 10)
+      x <- left_join(x, y2, by=grp) %>% filter(!is.na(Avg)) %>% 
+        mutate_(.dots=list(Transformed=paste0(stat, "-Avg"))) %>% select_(.dots=list(drp, "-Avg"))
+      if(trans==transforms[3]) x <- select(x, -Decade)
+    } else {
+      if(trans=="Log") x <- mutate_(x, Transformed=lazyeval::interp(~log(x+1), x=as.name(stat)))
+      if(trans=="Square root") x <- mutate_(x, Transformed=lazyeval::interp(~sqrt(x), x=as.name(stat)))
+      x <- select_(x, drp)
+    }
+    x <- rename_(x, .dots=setNames("Transformed", stat))
+  }
+  x
 }
 
 pTextSize <- function(x, value) tags$p(x, style=paste0("font-size: ", value, "%;"))
@@ -114,53 +142,66 @@ mouseLog <- function(x, ns, width){
 }
 
 inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main="Tab box with inputs box", width){
+  bpOpts <- c("Box plot", "Strip chart", "Overlay")
+  barposOpts <- c("Dodge", "Stack", "Proportions"="fill")
+  zoomOpts <- c("Zoom only", "Subset data")
+  lab <- list(trans="Apply transform", lines="Connect points with lines", togPts="Toggle selected points",
+    resPts="Reset points", selObs="Selected observations", jit="Jitter points", bpObs="Observations",
+    bars="Grouped bars", zoom="Zoom behavior", bins="Histogram bins (approx.)", alpha="Semi-transparency")
   
+  addLinesInput <- togInput <- togModal <- jitterInput <- binsInput <- 
+    zoomInput <- bpInput <- barposInput <- deltaINput <- NULL
   
-  addLinesInput <- togInput <- togModal <- jitterInput <- binsInput <- zoomInput <- bpInput <- NULL
   transformsInput <- if(!is.null(transforms)) 
-    selectizeInput(ns("transform"), label="Apply transform", choices=c("", transforms), selected="", width="100%") else NULL
+    selectizeInput(ns("transform"), lab$trans, c("", transforms), width="100%",
+                   options=list(placeholder='Apply transform...')) else NULL
   
   if(type=="ts"){
-    addLinesInput <- checkboxInput(ns("addLines"), "Connect points with lines", FALSE, width="100%")
-    togInput <- column(4,
-      actionButton(ns("exclude_toggle"), "Toggle selected points", class="btn-block"),
-      actionButton(ns("exclude_reset"), "Reset points", class="btn-block"),
+    addLinesInput <- checkboxInput(ns("addLines"), lab$lines, width="100%")
+    togInput <- tagList(
+      actionButton(ns("exclude_toggle"), lab$togPts, class="btn-block"),
+      actionButton(ns("exclude_reset"), lab$resPts, class="btn-block"),
       uiOutput(ns("btn_modal_table")))
-    togModal <- bsModal(ns("modal_table"), "Selected observations", ns("btn_modal_table"), size = "large",
-      div(DT::dataTableOutput(ns('Selected_obs')), style="font-size: 100%"))
+    togModal <- bsModal(ns("modal_table"), lab$selObs, ns("btn_modal_table"),
+      size="large", div(DT::dataTableOutput(ns('Selected_obs')), style="font-size: 100%"))
   }
   
   if(type %in% c("ts", "dec")){
-    bpInput <- selectInput(ns("bptype"), "Observations", choices=c("Box plot", "Strip chart", "Overlay"),
-                selected="Box plot", width="100%")
-    jitterInput <- checkboxInput(ns("jitter"), "Jitter points", FALSE, width="100%")
+    jitterInput <- checkboxInput(ns("jitter"), lab$jit, width="100%")
+  }
+  
+  if(type=="dec"){
+    bpInput <- selectInput(ns("bptype"), lab$bpObs, bpOpts, width="100%")
+    barposInput <- selectInput(ns("barpos"), lab$bars, barposOpts, width="100%")
   }
   
   if(type=="den"){
-    binsInput <- sliderInput(ns("bins"), "Histogram bins (approx.)", min=5, max=30, value=10, step=5, sep="", width="100%")
-    zoomInput <- selectInput(ns("zoom"), "Zoom behavior", choices=c("Zoom only", "Subset data"), selected="Zoom only", width="100%")
+    binsInput <- sliderInput(ns("bins"), lab$bins, 5, 30, 10, 5, sep="", width="100%")
+    zoomInput <- selectInput(ns("zoom"), lab$zoom, zoomOpts, width="100%")
   }
   
   box(
     fluidRow(
-      column(4,
-        selectizeInput(ns("colorby"), label="Color by", choices=grp, selected="", width="100%", options=list(placeholder='Color by...')),
-        selectizeInput(ns("facetby"), label="Facet by", choices=facet, selected="", width="100%", options=list(placeholder='Facet by...')),
-        selectizeInput(ns("pooled_vars"), label="Other variables", choices=pooled, selected=pooled[1], width="100%")
+      column(6,
+        selectizeInput(ns("colorby"), "Color by", grp, width="100%",
+                       options=list(placeholder='Color by...')),
+        selectizeInput(ns("facetby"), "Facet by", facet, width="100%",
+                       options=list(placeholder='Facet by...')),
+        selectInput(ns("pooled_vars"), "Other variables", pooled, width="100%")
       ),
-      column(4,
+      column(6,
         transformsInput,
         bsModal(ns("settings"), paste(main, "additional settings"), ns("btn_settings"), size="large",
           fluidRow(
-           column(3, sliderInput(ns("alpha"), "Semi-transparency", min=0.1, max=1, value=1, step=0.1, sep="", width="100%")),
-           column(3, selectInput(ns("facet_scales"), "Axis scales", choices=axis_scales, selected="fixed", width="100%")),
-           column(3, binsInput, zoomInput, bpInput, jitterInput),
+           column(3, sliderInput(ns("alpha"), lab$alpha, 0.1, 1, 1, 0.1, sep="", width="100%")),
+           column(3, selectInput(ns("facet_scales"), "Axis scales", choices=axis_scales, width="100%")),
+           column(3, binsInput, zoomInput, bpInput, barposInput, jitterInput),
            column(3, addLinesInput)
           )
         ),
+        togInput,
         actionButton(ns("btn_settings"), "Additional settings", icon("gear"), class="btn-block")
-      ),
-      togInput
+      )
     ),
     togModal,
     title=main, status="primary", solidHeader=TRUE, width=width, collapsible=TRUE, collapsed=TRUE

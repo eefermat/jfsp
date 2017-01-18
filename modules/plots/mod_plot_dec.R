@@ -18,6 +18,7 @@ decPlot <- function(type, limits){
   fctscales <- input$facet_scales
   alpha <- input$alpha
   alphaHalf <- alpha/2
+  barpos <- input$barpos
   
   g <- ggplot(data=d_source, aes_string(x, statname, colour=clrby, fill=clrby))
   
@@ -86,11 +87,11 @@ decPlot <- function(type, limits){
     }
   }
   if(type=="barplot"){
-    if(is.null(clrby)){
-      g <- g + geom_bar(stat="identity", colour="white", alpha=alpha)
-    } else {
-      g <- g + geom_bar(stat="identity", alpha=alpha)
-    }
+    #if(is.null(clrby)){
+      g <- g + geom_bar(stat="identity", colour="white", alpha=alpha, position=barpos)
+    #} else {
+    #  g <- g + geom_bar(stat="identity", alpha=alpha, position=barpos)
+    #}
   }
   
   g <- g + coord_cartesian(xlim=limits[[1]], ylim=limits[[2]]) + theme_bw(base_size=14)
