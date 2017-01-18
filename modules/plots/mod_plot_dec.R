@@ -4,12 +4,15 @@ decPlot <- function(type, limits){
   pos <- .getPosition(input$jitter, colorby(), dodgeable=TRUE)
   grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
   statname <- stat()
-  d_keep <- keep()
-  x <- "Decade"
+  
   if(type=="barplot"){
-    d_keep <- summarise_(d_keep, Decadal_mean=lazyeval::interp(~mean(x), x=as.name(stat())))
+    d_keep <- keep_dec()
     statname <- "Decadal_mean"
+  } else {
+    d_keep <- keep()
   }
+  x <- "Decade"
+
   d_source <- d_keep
   clrby <- colorby()
   pInteract <- plotInteraction()
@@ -20,13 +23,12 @@ decPlot <- function(type, limits){
   alphaHalf <- alpha/2
   barpos <- input$barpos
   
-  g <- ggplot(data=d_source, aes_string(x, statname, colour=clrby, fill=clrby))
+  g2 <- g <- ggplot(data=d_source, aes_string(x, statname, colour=clrby, fill=clrby))
   
   if(type=="boxplot"){
     doBox <- input$bptype %in% c("Box plot", "Overlay")
     doStrip <- input$bptype %in% c("Strip chart", "Overlay")
     if(doStrip) shp.out <- NA else shp.out <- 21
-    g2 <- g
     if(doBox){
       if(is.null(clrby)){
         g2 <- g2 + geom_boxplot(fill="gray", colour="black", alpha=alpha, outlier.shape=shp.out)
@@ -86,12 +88,27 @@ decPlot <- function(type, limits){
       g <- g2
     }
   }
+  
   if(type=="barplot"){
-    #if(is.null(clrby)){
-      g <- g + geom_bar(stat="identity", colour="white", alpha=alpha, position=barpos)
-    #} else {
-    #  g <- g + geom_bar(stat="identity", alpha=alpha, position=barpos)
-    #}
+    g2 <- g2 + geom_bar(stat="identity", colour="white", alpha=alpha, position=barpos)
+    if(nrow(d_keep)==length(rv_plots$keeprows2)){
+      if(!is.null(rv_plots$holdBrush2) | !is.null(rv_plots$holdClick2)){
+        if(any(rv_plots$keeprows2)){
+          d_keep2 <- d_keep[rv_plots$keeprows2,]
+          d_keep <- setdiff(d_keep, d_keep2)
+        } else {
+          d_keep2 <- d_keep
+        }
+        if(nrow(d_keep)!=0){
+          g <- g + geom_bar(data=d_keep, stat="identity", colour="white", alpha=alphaHalf, position=barpos)
+        }
+        g <- g + geom_bar(data=d_keep2, stat="identity", colour="white", alpha=alpha, position=barpos)
+      } else {
+        g <- g2
+      }
+    } else {
+      g <- g2
+    }
   }
   
   g <- g + coord_cartesian(xlim=limits[[1]], ylim=limits[[2]]) + theme_bw(base_size=14)
