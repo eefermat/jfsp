@@ -12,11 +12,6 @@ distPlot <- function(type, limits){
     if(input$zoom=="Subset data") g <- g + xlim(limits[[1]])
   }
   g <- g + theme_bw(base_size=14) #+ scale_y_continuous(expand = c(0, 0.5))
-  
-  if(!is.null(colorvec()))
-    g <- g + scale_colour_manual(values=colorvec(), limits=levels(d()[[colorby()]])) +
-    scale_fill_manual(values=colorvec(), limits=levels(d()[[colorby()]]))
-  if(input$facetby!="")
-    g <- g + facet_wrap(as.formula(paste0("~", input$facetby)), scales=input$facet_scales)
+  g <- .colorFacet(g, d(), colorby(), colorvec(), input$facetby, input$facet_scales)
   g + plottheme
 }

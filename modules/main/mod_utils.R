@@ -84,6 +84,28 @@ interact <- function(x){
   paste0("interaction(", paste0(x, collapse=","), ")")
 }
 
+.getPosition <- function(jitter, cby, w=0.2, h=0, wd=0.75, dodgeable=FALSE){
+  if(jitter) x <- position_jitter(width=w, height=h) else x <- "identity"
+  if(!dodgeable) return(x)
+  if(!is.null(cby)){
+    if(jitter){
+      x <- position_jitterdodge(jitter.width=w, jitter.height=h)
+    } else {
+      x <- position_dodge(width=wd)
+    }
+  }
+  x
+}
+
+.colorFacet <- function(g, d, cby, clr, fby, scales){
+  if(!is.null(clr)){
+    g <- g + scale_fill_manual(values=clr, limits=levels(d[[cby]])) +
+      scale_colour_manual(values=clr, limits=levels(d[[cby]]))
+  }
+  if(fby!="") g <- g + facet_wrap(as.formula(paste0("~", fby)), scales=scales)
+  g
+}
+
 mouseLog <- function(x, ns, width){
   if(x) column(width,
          "Mouse feedback: plot 1", verbatimTextOutput(ns("info1")),

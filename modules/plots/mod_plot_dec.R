@@ -1,15 +1,7 @@
 # Time series - decadal
 decPlot <- function(type, limits){
   if(preventPlot()) return()
-  if(input$jitter) pos <- position_jitter(width=0.2, height=0) else pos <- "identity"
-  if(!is.null(colorby())){
-    if(input$jitter){
-      pos <- position_jitterdodge(jitter.width=0.2, jitter.height=0)
-    } else {
-      pos <- position_dodge(width=0.75)
-    }
-  }
-  
+  pos <- .getPosition(input$jitter, colorby(), dodgeable=TRUE)
   grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
   statname <- stat()
   d_keep <- keep()
@@ -102,11 +94,6 @@ decPlot <- function(type, limits){
   }
   
   g <- g + coord_cartesian(xlim=limits[[1]], ylim=limits[[2]]) + theme_bw(base_size=14)
-  
-  if(!is.null(clrvec)){
-    g <- g + scale_fill_manual(values=clrvec, limits=levels(d_source[[clrby]])) +
-      scale_colour_manual(values=clrvec, limits=levels(d_source[[clrby]]))
-  }
-  if(fctby!="") g <- g + facet_wrap(as.formula(paste0("~", fctby)), scales=fctscales)
+  g <- .colorFacet(g, d_source, clrby, clrvec, fctby, fctscales)
   g + plottheme
 }

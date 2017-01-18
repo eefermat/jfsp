@@ -199,8 +199,8 @@ tsMod <- function(input, output, session, data){
   plotHeight <- reactive({ if(preventPlot()) 0 else 400 })
   plotInteraction <- reactive({ interact(names(d())) })
   
-  output$plot1 <- renderPlot({ tsPlot("annual-raw", list(rv_plots$x1, rv_plots$y1)) }, height=function() plotHeight())
-  output$plot2 <- renderPlot({ tsPlot("annual-cumulative", list(rv_plots$x2, rv_plots$y2)) }, height=function() plotHeight())
+  output$plot1 <- renderPlot({ tsPlot("raw", list(rv_plots$x1, rv_plots$y1)) }, height=function() plotHeight())
+  output$plot2 <- renderPlot({ tsPlot("cumulative", list(rv_plots$x2, rv_plots$y2)) }, height=function() plotHeight())
   
   output$info1 <- renderText({ mouseInfo(input$plot1_clk, input$plot1_dblclk, input$plot1_hov, input$plot1_brush) })
   output$info2 <- renderText({ mouseInfo(input$plot2_clk, input$plot2_dblclk, input$plot2_hov, input$plot2_brush) })
