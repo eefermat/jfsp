@@ -84,6 +84,13 @@ interact <- function(x){
   paste0("interaction(", paste0(x, collapse=","), ")")
 }
 
+mouseLog <- function(x, ns, width){
+  if(x) column(width,
+         "Mouse feedback: plot 1", verbatimTextOutput(ns("info1")),
+         "Mouse feedback: plot 2", verbatimTextOutput(ns("info2"))
+  ) else NULL
+}
+
 inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main="Tab box with inputs box", width){
   
   

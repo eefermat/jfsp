@@ -1,12 +1,7 @@
 tsModUI <- function(id, titles, values=titles, main="Tab box with inputs box", mouselog=FALSE, width=12){
   ns <- NS(id)
   
-  mouselog <- if(mouselog)
-    column(width,
-           "Mouse feedback: plot 1", verbatimTextOutput(ns("info1")),
-           "Mouse feedback: plot 2", verbatimTextOutput(ns("info2"))
-    ) else NULL
-  
+  ml <- mouseLog(mouselog, ns, width)
   sel <- values[1]
   plotId <- paste0("plot", seq_along(titles))
   tb <- map(rev(seq_along(titles)), ~tabPanel(titles[.x],
@@ -20,19 +15,14 @@ tsModUI <- function(id, titles, values=titles, main="Tab box with inputs box", m
     do.call(tabBox, c(tb, ns(id="box_ts"), selected=ns(sel), title=main, width=width, side="right")),
     inputsBox(ns=ns, grp=groupby_vars, pooled=pooled_options,
               transforms=c("Log", "Square root"), type="ts", main=main, width=width),
-    mouselog
+    ml
   )
 }
 
 denModUI <- function(id, titles, values=titles, main="Tab box with inputs box", mouselog=FALSE, width=12){
   ns <- NS(id)
   
-  mouselog <- if(mouselog)
-    column(width,
-           "Mouse feedback: plot 1", verbatimTextOutput(ns("info1")),
-           "Mouse feedback: plot 2", verbatimTextOutput(ns("info2"))
-    ) else NULL
-  
+  ml <- mouseLog(mouselog, ns, width)
   sel <- values[1]
   plotId <- paste0("plot", seq_along(titles))
   tb <- map(rev(seq_along(titles)), ~tabPanel(titles[.x],
@@ -46,19 +36,14 @@ denModUI <- function(id, titles, values=titles, main="Tab box with inputs box", 
     do.call(tabBox, c(tb, ns(id="box_den"), selected=ns(sel), title=main, width=width, side="right")),
     inputsBox(ns=ns, grp=groupby_vars, pooled=pooled_options,
               transforms=c("Log", "Square root"), type="den", main=main, width=width),
-    mouselog
+    ml
   )
 }
 
 decModUI <- function(id, titles, values=titles, main="Tab box with inputs box", mouselog=FALSE, width=12){
   ns <- NS(id)
   
-  mouselog <- if(mouselog)
-    column(width,
-           "Mouse feedback: plot 1", verbatimTextOutput(ns("info1")),
-           "Mouse feedback: plot 2", verbatimTextOutput(ns("info2"))
-    ) else NULL
-  
+  ml <- mouseLog(mouselog, ns, width)
   sel <- values[1]
   plotId <- paste0("plot", seq_along(titles))
   tb <- map(rev(seq_along(titles)), ~tabPanel(titles[.x],
@@ -77,7 +62,7 @@ decModUI <- function(id, titles, values=titles, main="Tab box with inputs box", 
     do.call(tabBox, c(tb, ns(id="tbox"), selected=ns(sel), title=main, width=width, side="right")),
     inputsBox(ns=ns, grp=groupby_vars, pooled=pooled_options,
               transforms=c("Log", "Square root"), type="dec", main=main, width=width),
-    mouselog
+    ml
   )
 }
 
