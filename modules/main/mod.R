@@ -3,13 +3,13 @@ mainModUI <- function(id, tab_name){
   tabItem(tabName=tab_name,
     fluidRow(
       column(8, tsModUI(id=ns("mod_ts"),
-        titles=c("Raw Observations", "Cumulative"), values=c("annual", "cumulative"), main="Annual time series", mouselog=TRUE)),
+        titles=c("Raw Observations", "Cumulative"), values=c("annual", "cumulative"), main="Annual time series")),
       column(4, denModUI(id=ns("mod_den"),
-        titles=c("Density", "Histogram"), values=c("density", "histogram"), main="Aggregate distribution", mouselog=TRUE))
+        titles=c("Density", "Histogram"), values=c("density", "histogram"), main="Aggregate distribution"))
     ),
     fluidRow(
       decModUI(id=ns("mod_dec"),
-        titles=c("Observations", "Averages"), values=c("dec_boxplot", "dec_barplot"), main="Decadal change", mouselog=TRUE))
+        titles=c("Observations", "Averages"), values=c("dec_boxplot", "dec_barplot"), main="Decadal change"))
   )
 }
 
