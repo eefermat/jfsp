@@ -103,7 +103,15 @@ plotDataPrep <- function(x, trans=NULL, pooled, col, facet, stat){
   x
 }
 
-pTextSize <- function(x, value) tags$p(x, style=paste0("font-size: ", value, "%;"))
+pTextSize <- function(x, value, margin=NULL, default.value=100){
+  if(length(x) > 1) value <- c(value, rep(default.value, length(x) - 1))
+  style <- paste0("font-size: ", value, "%;")
+  if(!is.null(margin)) style <- paste0(style, " margin: ", margin, "px;")
+  x <- map2(x, style, ~tags$p(.x, style=.y))
+  if(length(x)==1) return(x[[1]])
+  class(x) <- c("shiny.tag.list", "list")
+  x
+}
 
 interact <- function(x){
   grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
