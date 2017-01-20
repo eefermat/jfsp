@@ -394,6 +394,8 @@ decMod <- function(input, output, session, data){
     } else{
       x <- keep()
     }
+    dec <- as.character(sort(unique(x$Decade)))
+    if(length(dec) > 1) dec <- paste(dec[1], dec[length(dec)], sep=" - ")
     
     if(preventPlot() || nrow(x)==0) return()
     x <- ungroup(x) %>% summarise_(.dots=list(
@@ -408,20 +410,27 @@ decMod <- function(input, output, session, data){
     
     clrs <- c("yellow", "orange", "purple", "red", "blue", "navy")
     statval <- c(x$Mean_, x$Min_, x$Max_, x$Median_, paste(x$Pct25_, "-", x$Pct75_), x$SD_)
-    statlab <- c("Mean", "Min", "Max", "Median", "IQR", "Std Dev")
-    val <- map2(statval, c(rep(100, 4), 75, 100), ~pTextSize(.x, .y))
-    text <- map2(statlab, rep(150, 6), ~pTextSize(.x, .y))
+    statlab <- list(
+      c("Mean", dec),
+      c("Min", dec),
+      c("Max", dec),
+      c("Median", dec),
+      c("IQR", dec),
+      c("Std Dev", dec)
+    )
+    val <- map2(statval, 75, ~pTextSize(.x, .y))
+    text <- map2(statlab, rep(150, 6), ~pTextSize(.x, .y, margin=0))
     y <- list(
-      mean=valueBox(val[[1]], text[[1]], icon=icon(list(src="stat_icon_normal_mean_white.png", width="80px"), lib="local"), color=clrs[1], width=NULL),
-      min=valueBox(val[[2]], text[[2]], icon=icon(list(src="stat_icon_normal_min_white.png", width="80px"), lib="local"), color=clrs[2], width=NULL),
-      max=valueBox(val[[3]], text[[3]], icon=icon(list(src="stat_icon_normal_max_white.png", width="80px"), lib="local"), color=clrs[3], width=NULL),
-      med=valueBox(val[[4]], text[[4]], icon=icon(list(src="stat_icon_normal_median_white.png", width="80px"), lib="local"), color=clrs[4], width=NULL),
-      iqr=valueBox(val[[5]], text[[5]], icon=icon(list(src="stat_icon_boxplot_iqr_white.png", width="80px"), lib="local"), color=clrs[5], width=NULL),
-      sd=valueBox(val[[6]], text[[6]], icon=icon(list(src="stat_icon_normal_sd_white.png", width="80px"), lib="local"), color=clrs[6], width=NULL)
+      mean=valueBox(val[[1]], text[[1]], icon=icon(list(src="stat_icon_normal_mean_white.png", width="90px"), lib="local"), color=clrs[1], width=NULL),
+      min=valueBox(val[[2]], text[[2]], icon=icon(list(src="stat_icon_normal_min_white.png", width="90px"), lib="local"), color=clrs[2], width=NULL),
+      max=valueBox(val[[3]], text[[3]], icon=icon(list(src="stat_icon_normal_max_white.png", width="90px"), lib="local"), color=clrs[3], width=NULL),
+      med=valueBox(val[[4]], text[[4]], icon=icon(list(src="stat_icon_normal_median_white.png", width="90px"), lib="local"), color=clrs[4], width=NULL),
+      iqr=valueBox(val[[5]], text[[5]], icon=icon(list(src="stat_icon_boxplot_iqr_white.png", width="90px"), lib="local"), color=clrs[5], width=NULL),
+      sd=valueBox(val[[6]], text[[6]], icon=icon(list(src="stat_icon_normal_sd_white.png", width="90px"), lib="local"), color=clrs[6], width=NULL)
     )
     
     fluidRow(
-      tags$head(tags$style(HTML(".small-box {height: 100px}"))),
+      tags$head(tags$style(HTML(".small-box {height: 110px}"))),
       column(6, y$mean, y$med, y$min), column(6, y$sd, y$iqr, y$max)
     )
   })
@@ -435,33 +444,56 @@ decMod <- function(input, output, session, data){
     y <- "Decadal_mean"
     
     if(preventPlot() || nrow(x)==0) return()
-    x <- ungroup(x) %>% summarise_(.dots=list(
-      Mean_=paste0("mean(", y, ")"),
-      Min_=paste0("min(", y, ")"),
-      Max_=paste0("max(", y, ")"),
-      Median_=paste0("stats::median(", y, ")"),
-      Pct25_=paste0("stats::quantile(", y, ", prob=0.25)"),
-      Pct75_=paste0("stats::quantile(", y, ", prob=0.75)"),
-      SD_=paste0("stats::sd(", y, ")")
-    )) %>% round
+    x <- group_by(x, Decade) %>% summarise(Decadal_mean=mean(Decadal_mean))
+    idx.mn <- which.min(x$Decadal_mean)
+    idx.mx <- which.max(x$Decadal_mean)
+    idx.dn <- if(nrow(x)==1) NA else seq(which.min(diff(x$Decadal_mean)), length.out=2)
+    idx.up <- if(nrow(x)==1) NA else seq(which.max(diff(x$Decadal_mean)), length.out=2)
+    tot <- round(tail(x$Decadal_mean, 1) - x$Decadal_mean[1])
+    pct <- paste0(round(100*(tail(x$Decadal_mean, 1) / x$Decadal_mean[1] - 1)), "%")
     
     clrs <- c("yellow", "orange", "purple", "red", "blue", "navy")
-    statval <- c(x$Mean_, x$Min_, x$Max_, x$Median_, paste(x$Pct25_, "-", x$Pct75_), x$SD_)
-    statlab <- c("Mean", "Min", "Max", "Median", "IQR", "Std Dev")
-    val <- map2(statval, c(rep(100, 4), 75, 100), ~pTextSize(.x, .y))
-    text <- map2(statlab, rep(150, 6), ~pTextSize(.x, .y))
+    statval <- list(
+      mn=round(x$Decadal_mean[idx.mn]),
+      mx=round(x$Decadal_mean[idx.mx]),
+      dn=if(is.na(idx.dn[1])) NA else round(diff(x$Decadal_mean)[idx.dn[1]]),
+      up=if(is.na(idx.up[1])) NA else round(diff(x$Decadal_mean)[idx.up[1]]),
+      totdif=tot,
+      totpct=pct
+    )
+    
+    src.dnup <- c("stat_icon_bar_deltaNeg_white.png", "stat_icon_bar_deltaPos_white.png")
+    if(!is.na(statval$dn[1]) && statval$dn > 0) src.dnup[1] <- src.dnup[2]
+    if(!is.na(statval$up[1]) && statval$up < 0) src.dnup[2] <- src.dnup[1]
+    if(tot < 0){
+      src.totals <- c("stat_icon_ts_deltaDec_white.png", "stat_icon_ts_deltaPctDec_white.png")
+    } else {
+      src.totals <- c("stat_icon_ts_deltaInc_white.png", "stat_icon_ts_deltaPctInc_white.png")
+    }
+    dec <- if(nrow(x)==1) paste(x$Decade[1]) else paste(x$Decade[c(1, nrow(x))], collapse=" - ")
+    
+    statlab <- list(
+      c("Min", paste(x$Decade[idx.mn])),
+      c("Max", paste(x$Decade[idx.mx])),
+      c("Min growth", paste(x$Decade[idx.dn], collapse=" - ")),
+      c("Max growth", paste(x$Decade[idx.up], collapse=" - ")),
+      c("Total change", dec),
+      c("% change", dec)
+    )
+    val <- map2(statval, 75, ~pTextSize(.x, .y))
+    text <- map2(statlab, rep(150, 6), ~pTextSize(.x, .y, margin=0))
     y <- list(
-      mean=valueBox(val[[1]], text[[1]], icon=icon(list(src="stat_icon_normal_mean_white.png", width="80px"), lib="local"), color=clrs[1], width=NULL),
-      min=valueBox(val[[2]], text[[2]], icon=icon(list(src="stat_icon_normal_min_white.png", width="80px"), lib="local"), color=clrs[2], width=NULL),
-      max=valueBox(val[[3]], text[[3]], icon=icon(list(src="stat_icon_normal_max_white.png", width="80px"), lib="local"), color=clrs[3], width=NULL),
-      med=valueBox(val[[4]], text[[4]], icon=icon(list(src="stat_icon_normal_median_white.png", width="80px"), lib="local"), color=clrs[4], width=NULL),
-      iqr=valueBox(val[[5]], text[[5]], icon=icon(list(src="stat_icon_boxplot_iqr_white.png", width="80px"), lib="local"), color=clrs[5], width=NULL),
-      sd=valueBox(val[[6]], text[[6]], icon=icon(list(src="stat_icon_normal_sd_white.png", width="80px"), lib="local"), color=clrs[6], width=NULL)
+      mn=valueBox(val[[1]], text[[1]], icon=icon(list(src="stat_icon_normal_min_white.png", width="90px"), lib="local"), color=clrs[1], width=NULL),
+      mx=valueBox(val[[2]], text[[2]], icon=icon(list(src="stat_icon_normal_max_white.png", width="90px"), lib="local"), color=clrs[2], width=NULL),
+      dn=valueBox(val[[3]], text[[3]], icon=icon(list(src=src.dnup[1], width="90px"), lib="local"), color=clrs[3], width=NULL),
+      up=valueBox(val[[4]], text[[4]], icon=icon(list(src=src.dnup[2], width="90px"), lib="local"), color=clrs[4], width=NULL),
+      totdif=valueBox(val[[5]], text[[5]], icon=icon(list(src=src.totals[1], width="90px"), lib="local"), color=clrs[5], width=NULL),
+      totpct=valueBox(val[[6]], text[[6]], icon=icon(list(src=src.totals[2], width="90px"), lib="local"), color=clrs[6], width=NULL)
     )
     
     fluidRow(
-      tags$head(tags$style(HTML(".small-box {height: 100px}"))),
-      column(6, y$mean, y$med, y$min), column(6, y$sd, y$iqr, y$max)
+      tags$head(tags$style(HTML(".small-box {height: 110px}"))),
+      column(6, y$totdif, y$dn, y$mn), column(6, y$totpct, y$up, y$mx)
     )
   })
   
