@@ -104,14 +104,14 @@ server <- function(input, output) {
   files_black <- paste0("stat_icon_", fileparts1, "black.png")
   fileparts2 <- c(
     paste0("ts_", c("deltaDec_", "deltaInc_")), "bar_deltaNeg_",
-    paste0("ts_", c("deltaPctDec_", "deltaPctInc_")), "bar_DeltaPos_")
+    paste0("ts_", c("deltaPctDec_", "deltaPctInc_")), "bar_deltaPos_")
   files_white <- c(files_white, paste0("stat_icon_", fileparts2, "white.png"))
   files_black <- c(files_black, paste0("stat_icon_", fileparts2, "black.png"))
   
   # data
   set.seed(1)
   x <- rnorm(1000, 100, 10)
-  del <- c(-154, 47, -81, -12, 114, 60) # values for delta change example icons
+  del <- c(-154, 47, -81, "-12%", "114%", 60) # values for delta change example icons
   del.lab <- c("Total change", "Total change", "Max loss", "% change", "% change", "Max growth")
   val <- round(c(mean(x), sd(x), min(x), max(x), median(x)))
   val <- c(val, paste(round(quantile(x, probs = c(0.25, 0.75))), collapse=" - "), del)
