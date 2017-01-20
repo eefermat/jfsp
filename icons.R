@@ -106,7 +106,7 @@ makeIcons <- function(primary_color="#FFFFFF", secondary_color="#FFFFFF75", colo
   plot(0,0, type="n", axes=FALSE, xlab="", ylab="", xlim=range(x), ylim=range(y))
   lines(x, rev(y), lty=2, col=secondary_color)
   arrows(x[1], y[length(y)], x[length(x)], y[1], lwd=3, col=primary_color)
-  legend("topright", legend=expression(bolditalic(Delta~symbol("\045"))), bty ="n", pch=NA, cex=1.8, adj=c(-0.25, 0), text.col=primary_color)
+  legend("topright", legend=expression(bolditalic(symbol("\045")~Delta)), bty ="n", pch=NA, cex=1.8, adj=c(-0.25, 0), text.col=primary_color)
   dev.off()
   
   CairoPNG(paste0("stat_icon_ts_deltaPctInc_", color_theme, ".png"), width=96, height=96, bg="transparent")
@@ -114,7 +114,7 @@ makeIcons <- function(primary_color="#FFFFFF", secondary_color="#FFFFFF75", colo
   plot(0,0, type="n", axes=FALSE, xlab="", ylab="", xlim=range(x), ylim=range(y))
   lines(x, y, lty=2, col=secondary_color)
   arrows(x[1], y[1], x[length(x)], y[length(y)], lwd=3, col=primary_color)
-  legend("topleft", legend=expression(bolditalic(Delta~symbol("\045"))), bty ="n", pch=NA, cex=1.8,  adj=c(0.9, 0), text.col=primary_color)
+  legend("topleft", legend=expression(bolditalic(symbol("\045")~Delta)), bty ="n", pch=NA, cex=1.8,  adj=c(0.9, 0), text.col=primary_color)
   dev.off()
   
   # bar icons
