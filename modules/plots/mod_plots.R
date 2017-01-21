@@ -449,7 +449,7 @@ decMod <- function(input, output, session, data){
     idx.mx <- which.max(x$Decadal_mean)
     idx.dn <- if(nrow(x)==1) NA else seq(which.min(diff(x$Decadal_mean)), length.out=2)
     idx.up <- if(nrow(x)==1) NA else seq(which.max(diff(x$Decadal_mean)), length.out=2)
-    tot <- round(tail(x$Decadal_mean, 1) - x$Decadal_mean[1])
+    tot <- tail(x$Decadal_mean, 1) - x$Decadal_mean[1]
     pct <- paste0(round(100*(tail(x$Decadal_mean, 1) / x$Decadal_mean[1] - 1)), "%")
     
     clrs <- c("yellow", "orange", "purple", "red", "blue", "navy")
@@ -458,7 +458,7 @@ decMod <- function(input, output, session, data){
       mx=round(x$Decadal_mean[idx.mx]),
       dn=if(is.na(idx.dn[1])) NA else round(diff(x$Decadal_mean)[idx.dn[1]]),
       up=if(is.na(idx.up[1])) NA else round(diff(x$Decadal_mean)[idx.up[1]]),
-      totdif=tot,
+      totdif=ifelse(tot < 1 & tot > 0, 1, ifelse(tot < 0 & tot > -1, -1, round(tot))),
       totpct=pct
     )
     
