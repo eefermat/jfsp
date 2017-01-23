@@ -149,7 +149,7 @@ mouseLog <- function(x, ns, width){
   ) else NULL
 }
 
-inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main="Tab box with inputs box", width){
+inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main="", width){
   bpOpts <- c("Box plot", "Strip chart", "Overlay")
   barposOpts <- c("Dodge", "Stack", "Proportions"="fill")
   zoomOpts <- c("Zoom only", "Subset data")
@@ -188,7 +188,7 @@ inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main="T
     zoomInput <- selectInput(ns("zoom"), lab$zoom, zoomOpts, width="100%")
   }
   
-  box(
+  tagList(
     fluidRow(
       column(6,
         selectizeInput(ns("colorby"), "Color by", grp, width="100%",
@@ -211,7 +211,38 @@ inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main="T
         actionButton(ns("btn_settings"), "Additional settings", icon("gear"), class="btn-block")
       )
     ),
-    togModal,
-    title=main, status="primary", solidHeader=TRUE, width=width, collapsible=TRUE, collapsed=TRUE
+    togModal
   )
+}
+
+modUIprep <- function(id, type, ibox, titles="", values=titles, main="Tab box with inputs box",
+                      direction="xy", resetOnNew=FALSE, stats=FALSE, statcols=4, 
+                      trans=NULL, mouselog=FALSE, width=12){
+  ns <- NS(id)
+  if(type=="plot"){
+    sel <- values[1]
+    plotId <- paste0("plot", seq_along(titles))
+    pOut <- function(i){
+      plotOutput(ns(plotId[i]), height="auto",
+        click=ns(paste0(plotId[i], "_clk")), dblclick=ns(paste0(plotId[i], "_dblclk")),
+        hover=ns(paste0(plotId[i], "_hov")), brush=brushOpts(id=ns(paste0(plotId[i], "_brush")),
+                                                            direction=direction, resetOnNew=resetOnNew))
+    }
+    tb <- if(stats)
+      map(rev(seq_along(titles)), ~tabPanel(titles[.x],
+        fluidRow(column(12-statcols, pOut(.x)), column(statcols, uiOutput(ns(paste0("statBoxes", .x))))),
+        value=ns(values[.x]))) else 
+      map(rev(seq_along(titles)), ~tabPanel(titles[.x], pOut(.x), value=ns(values[.x])))
+    return(
+      do.call(tabBox, c(tb, ns(id="tbox"), selected=ns(sel), title=main, width=width, side="right"))
+    )
+  }
+  if(type=="inputs"){
+    ml <- mouseLog(mouselog, ns, width)
+    return(tagList(
+      inputsBox(ns=ns, grp=groupby_vars, pooled=pooled_options,
+                transforms=trans, type=ibox, main=main, width=width),
+      ml
+    ))
+  }
 }
