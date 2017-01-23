@@ -3,14 +3,14 @@ mainModUI <- function(id, tab_name){
   main <- c("Annual time series", "Aggregate distribution", "Decadal change")
   tabItem(tabName=tab_name,
     fluidRow(
-      column(8, tsModUI(id=ns("mod_ts"), type="plot",
-        titles=c("Raw Observations", "Cumulative"), values=c("annual", "cumulative"), main=main[1])),
-      column(4, denModUI(id=ns("mod_den"), type="plot",
-        titles=c("Density", "Histogram"), values=c("density", "histogram"), main=main[2]))
+      tsModUI(id=ns("mod_ts"), type="plot", titles=c("Raw Observations", "Cumulative"),
+              values=c("annual", "cumulative"), main=main[1], width=8),
+      denModUI(id=ns("mod_den"), type="plot", titles=c("Density", "Histogram"),
+               values=c("density", "histogram"), main=main[2], width=4)
     ),
     fluidRow(
-      decModUI(id=ns("mod_dec"), type="plot",
-        titles=c("Observations", "Averages"), values=c("dec_boxplot", "dec_barplot"), main=main[3])),
+      decModUI(id=ns("mod_dec"), type="plot", titles=c("Observations", "Averages"),
+               values=c("dec_boxplot", "dec_barplot"), main=main[3])),
     fluidRow(
       box(
         tabBox(
