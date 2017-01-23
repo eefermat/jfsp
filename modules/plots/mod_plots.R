@@ -1,70 +1,16 @@
-tsModUI <- function(id, titles, values=titles, main="Tab box with inputs box", mouselog=FALSE, width=12){
-  ns <- NS(id)
-  
-  ml <- mouseLog(mouselog, ns, width)
-  sel <- values[1]
-  plotId <- paste0("plot", seq_along(titles))
-  tb <- map(rev(seq_along(titles)), ~tabPanel(titles[.x],
-    plotOutput(ns(plotId[.x]), height="auto",
-              click=ns(paste0(plotId[.x], "_clk")), dblclick=ns(paste0(plotId[.x], "_dblclk")),
-              hover=ns(paste0(plotId[.x], "_hov")), brush=brushOpts(id=ns(paste0(plotId[.x], "_brush")))),
-    value=ns(values[.x]))
-           )
-  
-  tagList(
-    do.call(tabBox, c(tb, ns(id="box_ts"), selected=ns(sel), title=main, width=width, side="right")),
-    inputsBox(ns=ns, grp=groupby_vars, pooled=pooled_options,
-              transforms=c("Log", "Square root"), type="ts", main=main, width=width),
-    ml
-  )
+tsModUI <- function(...){
+  trans <- c("Log", "Square root")
+  modUIprep(trans=trans, ibox="ts", ...)
 }
 
-denModUI <- function(id, titles, values=titles, main="Tab box with inputs box", mouselog=FALSE, width=12){
-  ns <- NS(id)
-  
-  ml <- mouseLog(mouselog, ns, width)
-  sel <- values[1]
-  plotId <- paste0("plot", seq_along(titles))
-  tb <- map(rev(seq_along(titles)), ~tabPanel(titles[.x],
-    plotOutput(ns(plotId[.x]), height="auto",
-               click=ns(paste0(plotId[.x], "_clk")), dblclick=ns(paste0(plotId[.x], "_dblclk")),
-               hover=ns(paste0(plotId[.x], "_hov")), brush=brushOpts(id=ns(paste0(plotId[.x], "_brush")), direction="x", resetOnNew=TRUE)),
-    value=ns(values[.x]))
-  )
-  
-  tagList(
-    do.call(tabBox, c(tb, ns(id="box_den"), selected=ns(sel), title=main, width=width, side="right")),
-    inputsBox(ns=ns, grp=groupby_vars, pooled=pooled_options,
-              transforms=c("Log", "Square root"), type="den", main=main, width=width),
-    ml
-  )
+denModUI <- function(...){
+  trans <- c("Log", "Square root")
+  modUIprep(direction="x", resetOnNew=TRUE, trans=trans, ibox="den", ...)
 }
 
-decModUI <- function(id, titles, values=titles, main="Tab box with inputs box", mouselog=FALSE, width=12){
-  ns <- NS(id)
-  
-  trans <- c("Baseline anomalies", "Period anomalies", "Prior decade anomalies", "Log", "Square root")
-  ml <- mouseLog(mouselog, ns, width)
-  sel <- values[1]
-  plotId <- paste0("plot", seq_along(titles))
-  tb <- map(rev(seq_along(titles)), ~tabPanel(titles[.x],
-    fluidRow(
-      column(8,
-        plotOutput(ns(plotId[.x]), height="auto",
-          click=ns(paste0(plotId[.x], "_clk")), dblclick=ns(paste0(plotId[.x], "_dblclk")),
-          hover=ns(paste0(plotId[.x], "_hov")), brush=brushOpts(id=ns(paste0(plotId[.x], "_brush")), direction="x"))
-      ),
-      column(4, uiOutput(ns(paste0("statBoxes", .x))))
-    ),
-    value=ns(values[.x]))
-  )
-  
-  tagList(
-    do.call(tabBox, c(tb, ns(id="tbox"), selected=ns(sel), title=main, width=width, side="right")),
-    inputsBox(ns=ns, grp=groupby_vars, pooled=pooled_options,
-              transforms=trans, type="dec", main=main, width=width),
-    ml
-  )
+decModUI <- function(...){
+  trans <- c(paste(c("Baseline", "Period", "Prior decade"), "anomalies"), "Log", "Square root")
+  modUIprep(direction="x", trans=trans, stats=TRUE, ibox="dec", ...)
 }
 
 denMod <- function(input, output, session, data){
