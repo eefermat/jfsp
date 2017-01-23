@@ -30,17 +30,19 @@ function(request){
       includeCSS("www/styles.css"),
       bsModal("modal_data", "Data filter", "btn_modal_data", size="large",
               leafletOutput("Map", width="100%"),
+              selectInput("regions", "Region", choices=regions, selected="", multiple=TRUE, width="100%"),
+              selectInput("veg", "Vegetation", choices=veg, selected="All", multiple=TRUE, width="100%"),
               fluidRow(
-                column(3, selectInput("gbms", "GBM", choices=gbms, selected=gbms, multiple=TRUE, width="100%")),
+                column(3, selectInput("gbms", "GBM", choices=gbms, selected=gbms[1], multiple=TRUE, width="100%")),
                 column(3, selectInput("rcps", "RCP", choices=rcps, selected=rcps, multiple=TRUE, width="100%")),
                 column(6, sliderInput("yrs", "Years", min=period[1], max=period[2], value=period, step=1, sep="", width="100%"))
               ),
-              selectInput("gcms", "GCM", choices=gcms, selected=gcms, multiple=TRUE, width="100%"),
-              selectInput("regions", "Region", choices=regions, selected="", multiple=TRUE, width="100%"),
-              selectInput("veg", "Vegetation", choices=veg, selected=veg, multiple=TRUE, width="100%"),
               fluidRow(
-                column(6, selectInput("stat", "Stat", choices=stats, selected="Mean", width="100%")),
-                column(6, checkboxInput("flammable", "Show flammable region", TRUE, width="100%"))
+                column(6,
+                       selectInput("gcms", "GCM", choices=gcms, selected=gcms, multiple=TRUE, width="100%"),
+                       checkboxInput("flammable", "Show flammable region", TRUE, width="100%")
+                ),
+                column(6, selectInput("stat", "Summarize sims by", choices=stats, selected="Mean", width="100%"))
               )
       ),
       tabItems(
