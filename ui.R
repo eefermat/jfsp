@@ -9,17 +9,17 @@ function(request){
       #tags$head(includeScript("ga-nwtapp.js"), includeScript("ga-allapps.js")),
     ),
     dashboardSidebar(
-      actionButton("btn_modal_data", "Data filter", icon("paper-plane"),
+      actionButton("btn_modal_data", "Data filter", icon("sliders"),
         style=action_btn_style, class="btn-flat action-button btn-block"),
       sidebarMenu(
         id="tabs",
         #menuItem("Data", icon=icon("th"), tabName="data"),
-        menuItem("Fire", icon=icon("dashboard"),
+        menuItem("Fire", icon=icon("fire", lib="glyphicon"),
           menuSubItem("Burn area", tabName="burnarea"),
           menuSubItem("Fire count", tabName="firefreq"),
           menuSubItem("Fire size", tabName="firesize")
         ),
-        menuItem("Vegetation", icon=icon("dashboard"),
+        menuItem("Vegetation", icon=icon("tree"), badgeColor="green",
           menuSubItem("Cover area", tabName="vegarea"),
           menuSubItem("Stand age", tabName="vegage")
         )
