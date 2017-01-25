@@ -24,7 +24,8 @@ function(request){
           menuSubItem("Stand age", tabName="vegage")
         )
       ),
-      bookmarkButton(style=action_btn_style, class="btn-flat action-button btn-block")
+      #bookmarkButton(style=action_btn_style, class="btn-flat action-button btn-block")
+      actionButton("fake", "Bookmark", style=action_btn_style, class="btn-flat action-button btn-block", icon=icon("link")) # placeholder
     ),
     dashboardBody(
       includeCSS("www/styles.css"),
