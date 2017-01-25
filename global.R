@@ -23,4 +23,4 @@ source("modules/main/mod_utils.R")
 source("modules/main/mod.R")
 source("modules/plots/mod_plots.R")
 
-enableBookmarking(store="server")
+#enableBookmarking(store="server") # not yet available on shinyapps.io
