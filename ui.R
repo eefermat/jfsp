@@ -31,12 +31,12 @@ function(request){
       includeCSS("www/styles.css"),
       bsModal("modal_data", "Data filter", "btn_modal_data", size="large",
               leafletOutput("Map", width="100%"),
-              selectInput("regions", "Region", choices=regions, selected="", multiple=TRUE, width="100%"),
+              selectInput("regions", "Fire Mgmt Zones", choices=regions, selected="", multiple=TRUE, width="100%"),
               selectInput("veg", "Vegetation", choices=veg, selected="All", multiple=TRUE, width="100%"),
               fluidRow(
                 column(3, selectInput("gbms", "GBM", choices=gbms, selected=gbms[1], multiple=TRUE, width="100%")),
                 column(3, selectInput("rcps", "RCP", choices=rcps, selected=rcps, multiple=TRUE, width="100%")),
-                column(6, sliderInput("yrs", "Years", min=period[1], max=period[2], value=period, step=1, sep="", width="100%"))
+                column(6, sliderInput("yrs", "Years", min=period[1], max=period[2], value=c(2014, 2099), step=1, sep="", width="100%"))
               ),
               fluidRow(
                 column(6,
