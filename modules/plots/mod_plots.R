@@ -396,7 +396,18 @@ decMod <- function(input, output, session, data){
     idx.dn <- if(nrow(x)==1) NA else seq(which.min(diff(x$Decadal_mean)), length.out=2)
     idx.up <- if(nrow(x)==1) NA else seq(which.max(diff(x$Decadal_mean)), length.out=2)
     tot <- tail(x$Decadal_mean, 1) - x$Decadal_mean[1]
+    tot2 <- ifelse(tot < 1 & tot > 0, 1, ifelse(tot < 0 & tot > -1, -1, round(tot)))
     pct <- paste0(round(100*(tail(x$Decadal_mean, 1) / x$Decadal_mean[1] - 1)), "%")
+    
+    
+    if(input$transform=="Baseline anomalies"){
+      pct <- NA
+    } else if(input$transform=="Period anomalies"){
+      pct <- NA
+    } else if(input$transform=="Prior decade anomalies"){
+      tot2 <- NA
+      pct <- NA
+    }
     
     clrs <- c("yellow", "orange", "purple", "red", "blue", "navy")
     statval <- list(
@@ -404,7 +415,7 @@ decMod <- function(input, output, session, data){
       mx=round(x$Decadal_mean[idx.mx]),
       dn=if(is.na(idx.dn[1])) NA else round(diff(x$Decadal_mean)[idx.dn[1]]),
       up=if(is.na(idx.up[1])) NA else round(diff(x$Decadal_mean)[idx.up[1]]),
-      totdif=ifelse(tot < 1 & tot > 0, 1, ifelse(tot < 0 & tot > -1, -1, round(tot))),
+      totdif=tot2,
       totpct=pct
     )
     
