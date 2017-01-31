@@ -18,10 +18,14 @@ shinyServer(function(input, output, session) {
   outputOptions(output ,"Map", suspendWhenHidden=FALSE)
   
   d1 <- reactive({
-    filter(d, GBM %in% input$gbms & RCP %in% input$rcps & Model %in% input$gcms & Region %in% input$regions &
-             Vegetation %in% input$veg & Year >= input$yrs[1] & Year <= input$yrs[2]) %>%
-      select_(.dots=c("GBM", "RCP", "Model", "Region", "Var", "Vegetation", "Year", input$stat)) %>% split(.$Var) %>%
-      map(~droplevels(.x))
+    getSubset <- function(x) filter(x, 
+      GBM %in% input$gbms & RCP %in% c("Historical", input$rcps) & 
+        Model %in% c("CRU 3.2", input$gcms) & Region %in% input$regions &
+        Vegetation %in% input$veg & Year >= input$yrs[1] & Year <= input$yrs[2]) %>%
+      select_(.dots=c("GBM", "RCP", "Model", "Region", "Var", "Vegetation", "Year", input$stat))
+    x <- getSubset(d)
+    if(input$yrs[1] < 2014) x <- bind_rows(getSubset(h), x)
+    x %>% split(.$Var) %>% map(~droplevels(.x))
   })
   
   d_ba <- reactive({ d1()[["Burn Area"]] })
