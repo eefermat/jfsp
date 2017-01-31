@@ -23,6 +23,7 @@ loadData <- function(files){
   for(i in seq_along(files)){
     load(files[i], envir=e)
     d[[i]] <- tbl_df(get(ls(pattern="^stats.alf", envir=e), envir=e))
+    rm(list=ls(pattern="^stats.alf", envir=e), envir=e)
   }
   d
 }
@@ -48,13 +49,13 @@ d <- prepData(dp, files.p)
 
 rcps <- c("4.5"=rcp[1], "6.0"=rcp[2], "8.5"=rcp[3])
 gbms <- levels(d$GBM)
-gcms <- levels(d$Model)
+gcms <- levels(d$Model)[-1]
 regions <- c("Chugach N.F."="CGF", "Copper River"="CRS", "Delta"="DAS", "Fairbanks"="FAS",
              "Galena"="GAD", "Military"="MID", "Southwest"="SWS", "Tanana"="TAD", 
              "Tok"="TAS", "Upper Yukon"="UYD")
 #regions <- levels(d$Region)
 veg <- levels(d$Vegetation)
-period <- range(d$Year)
+period <- range(c(h$Year, d$Year))
 variables <- levels(d$Var)
 stats <- c("Mean", "Min", "Max")
 
