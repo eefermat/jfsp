@@ -64,7 +64,7 @@ mouseInfo <- function(clk, dblclk, hov, brush){
 
 plotDataPrep <- function(x, trans=NULL, pooled, col, facet, stat){
   if(pooled=="Average observations"){
-    grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
+    grp <- c("RCP", "Model", "Region", "Vegetation")
     grp <- c(grp[grp %in% c(col, facet)], "Var", "Year")
     x <- group_by_(x, .dots=grp) %>% summarise_(Avg=lazyeval::interp(~round(mean(x)), x=as.name(stat))) %>% 
       rename_(.dots=setNames("Avg", stat)) %>% ungroup
@@ -72,7 +72,7 @@ plotDataPrep <- function(x, trans=NULL, pooled, col, facet, stat){
   
   if(!is.null(trans) && trans!=""){
     drp <- paste0("-", stat)
-    grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
+    grp <- c("RCP", "Model", "Region", "Vegetation")
     transforms <- c("Baseline anomalies", "Period anomalies", "Prior decade anomalies")
     if(trans %in% transforms){
       if(trans==transforms[1]){
@@ -114,7 +114,7 @@ pTextSize <- function(x, value, margin=NULL, default.value=100){
 }
 
 interact <- function(x){
-  grp <- c("GBM", "RCP", "Model", "Region", "Vegetation")
+  grp <- c("RCP", "Model", "Region", "Vegetation")
   x <- grp[grp %in% x]
   if(!length(x)) return()
   paste0("interaction(", paste0(x, collapse=","), ")")

@@ -2,7 +2,7 @@
 decPlot <- function(type, limits){
   if(preventPlot()) return()
   pos <- .getPosition(input$jitter, colorby(), dodgeable=TRUE)
-  grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
+  grp <- c("RCP", "Model", "Region", "Var", "Vegetation")
   statname <- stat()
   
   if(type=="barplot"){

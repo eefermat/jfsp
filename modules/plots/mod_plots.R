@@ -191,7 +191,7 @@ decMod <- function(input, output, session, data){
   
   keep <- reactive({
     if(is.null(d())) return()
-    grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
+    grp <- c("RCP", "Model", "Region", "Var", "Vegetation")
     grp <- grp[grp %in% names(d())]
     mutate(d(), Decade=factor(paste0(Year - Year %% 10, "s"))) %>% group_by_(.dots=c(grp, "Decade")) %>% select(-Year)
   })

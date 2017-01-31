@@ -2,7 +2,7 @@
 tsPlot <- function(type, limits){
   if(preventPlot()) return()
   pos <- .getPosition(input$jitter, colorby())
-  grp <- c("GBM", "RCP", "Model", "Region", "Var", "Vegetation")
+  grp <- c("RCP", "Model", "Region", "Var", "Vegetation")
   grp <- grp[grp %in% names(keep())]
   x <- "Year"
   statname <- stat()
