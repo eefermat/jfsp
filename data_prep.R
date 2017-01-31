@@ -3,7 +3,7 @@ library(purrr)
 library(ggplot2)
 
 # setup
-gbm <- c("3m", "5m")
+gbm <- "5m" #c("3m", "5m")
 rcp <- c("Historical", "RCP 4.5", "RCP 6.0", "RCP 8.5")
 models <- c("CRU 3.2", "NCAR-CCSM4", "GFDL-CM3", "GISS-E2-R", "IPSL-CM5A-LR", "MRI-CGCM3")
 veg.drop <- c("Barren lichen-moss", "Temperate Rainforest")
@@ -33,7 +33,7 @@ dp <- loadData(files.p)
 
 # prep data
 prepData <- function(d, files){
-  d <- bind_rows(map2(d, rep(gbm, each=length(files)/2),
+  d <- bind_rows(map2(d, rep(gbm, each=length(files)/length(gbm)),
                      ~select_(.x, .dots=stats.drop) %>% filter(!Vegetation %in% veg.drop & Location!="AK") %>%
                        mutate(Phase=.y,
                               Model=ifelse(Model=="CCSM4", "NCAR-CCSM4", Model),
@@ -42,18 +42,19 @@ prepData <- function(d, files){
     mutate(GBM=factor(GBM), Region=factor(Region), RCP=factor(RCP, levels=rcp), 
            Model=factor(Model, levels=models), Var=factor(Var)) %>%
     arrange(GBM, Region, RCP, Model, Var, Vegetation, Year)
+  if(length(gbm)==1) d <- select(d, -GBM)
+  d
 }
 
 h <- prepData(dh, files.h)
 d <- prepData(dp, files.p)
 
-rcps <- c("4.5"=rcp[1], "6.0"=rcp[2], "8.5"=rcp[3])
-gbms <- levels(d$GBM)
+rcps <- c("4.5"=rcp[2], "6.0"=rcp[3], "8.5"=rcp[4])
+if(length(gbm) > 1) gbms <- levels(d$GBM)
 gcms <- levels(d$Model)[-1]
 regions <- c("Chugach N.F."="CGF", "Copper River"="CRS", "Delta"="DAS", "Fairbanks"="FAS",
              "Galena"="GAD", "Military"="MID", "Southwest"="SWS", "Tanana"="TAD", 
              "Tok"="TAS", "Upper Yukon"="UYD")
-#regions <- levels(d$Region)
 veg <- levels(d$Vegetation)
 period <- range(c(h$Year, d$Year))
 variables <- levels(d$Var)
@@ -65,4 +66,6 @@ flam <- readOGR("shapefiles/flam_polygon.shp", verbose=FALSE)
 fmz <- readOGR("shapefiles/fmz_polygons.shp", verbose=FALSE)
 
 # Save app workspace
-save(d, h, gbms, rcps, gcms, regions, veg, period, variables, stats, flam, fmz, file="appData.RData")
+objs <- c('d', 'h', 'rcps', 'gcms', 'regions', 'veg', 'period', 'variables', 'stats', 'flam', 'fmz')
+if(length(gbm) > 1) objs <- c(objs, gbms)
+save(list=objs, file="appData.RData")
