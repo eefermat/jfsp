@@ -9,11 +9,10 @@ function(request){
       #tags$head(includeScript("ga-nwtapp.js"), includeScript("ga-allapps.js")),
     ),
     dashboardSidebar(
-      actionButton("btn_modal_data", "Data filter", icon("sliders"),
-        style=action_btn_style, class="btn-flat action-button btn-block"),
+      useToastr(),
       sidebarMenu(
         id="tabs",
-        #menuItem("Data", icon=icon("th"), tabName="data"),
+        menuItem("Data", icon=icon("sliders"), tabName="data"),
         menuItem("Fire", icon=icon("fire", lib="glyphicon"),
           menuSubItem("Burn area", tabName="burnarea"),
           menuSubItem("Fire count", tabName="firefreq"),
@@ -29,24 +28,44 @@ function(request){
     ),
     dashboardBody(
       includeCSS("www/styles.css"),
-      bsModal("modal_data", "Data filter", "btn_modal_data", size="large",
-              leafletOutput("Map", width="100%"),
-              selectInput("regions", "Fire Mgmt Zones", choices=regions, selected="", multiple=TRUE, width="100%"),
-              selectInput("veg", "Vegetation", choices=veg, selected="All", multiple=TRUE, width="100%"),
-              fluidRow(
-                column(3, selectInput("gbms", "GBM", choices=gbms, selected=gbms[1], multiple=TRUE, width="100%")),
-                column(3, selectInput("rcps", "RCP", choices=rcps, selected=rcps, multiple=TRUE, width="100%")),
-                column(6, sliderInput("yrs", "Years", min=period[1], max=period[2], value=c(2014, 2099), step=1, sep="", width="100%"))
-              ),
-              fluidRow(
-                column(6,
-                       selectInput("gcms", "GCM", choices=gcms, selected=gcms, multiple=TRUE, width="100%"),
-                       checkboxInput("flammable", "Show flammable region", TRUE, width="100%")
-                ),
-                column(6, selectInput("stat", "Summarize sims by", choices=stats, selected="Mean", width="100%"))
-              )
+      bsModal("staticmap", "Fire Management Zones", "btn_staticmap", size="large",
+        img(src='Fire_Mgmt_Areas.png', align="center", style="width: 100%")
       ),
       tabItems(
+        tabItem(tabName="data",
+          fluidRow(
+            column(6, leafletOutput("Map", width="100%", height="500px")),
+            column(6,
+              selectInput("regions", "Fire Mgmt Zones", choices=regions, selected="", multiple=TRUE, width="100%"),
+              selectInput("veg", "Vegetation", choices=veg, selected="All", multiple=TRUE, width="100%"),
+              selectInput("gcms", "GCM", choices=gcms, selected=gcms, multiple=TRUE, width="100%"),
+              fluidRow(
+                column(6, selectInput("rcps", "RCP", choices=rcps, selected=rcps, multiple=TRUE, width="100%")),
+                column(6, selectInput("stat", "Summarize sims by", choices=stats, selected="Mean", width="100%"))
+              ),
+              sliderInput("yrs", "Years", min=period[1], max=period[2], value=c(2014, 2099), step=1, sep="", width="100%"),
+              fluidRow(
+                column(6, actionButton("btn_staticmap", "Detailed FMZ map", class="btn-block", icon("globe"))),
+                column(6, checkboxInput("flammable", "Show flammable region", TRUE, width="100%"))
+                
+              )
+            )
+          ),
+          br(),
+          fluidRow(
+            box(
+              tabBox(
+                tabPanel("Stand age", verbatimTextOutput("filtered_a"), icon=icon("tree")),
+                tabPanel("Cover area", verbatimTextOutput("filtered_v"), icon=icon("tree")),
+                tabPanel("Fire size", verbatimTextOutput("filtered_fs"), icon=icon("fire", lib="glyphicon")),
+                tabPanel("Fire count", verbatimTextOutput("filtered_fc"), icon=icon("fire", lib="glyphicon")),
+                tabPanel("Burn area", verbatimTextOutput("filtered_ba"), icon=icon("fire", lib="glyphicon")),
+                tabPanel("Full table", div(DT::dataTableOutput("filtered_data"), style="font-size: 100%"), icon=icon("sliders")),
+                id="summary", selected="Full table", title="Full table subset and summaries", width=12, side="right"
+              ), title="Current data selections", status="primary", solidHeader=TRUE, width=12, collapsible=TRUE
+            )
+          )
+        ),
         mainModUI(id="mod_burnarea", tab_name="burnarea"),
         mainModUI(id="mod_firefreq", tab_name="firefreq"),
         mainModUI(id="mod_firesize", tab_name="firesize"),
