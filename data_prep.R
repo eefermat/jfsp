@@ -53,9 +53,11 @@ rcps <- c("4.5"=rcp[2], "6.0"=rcp[3], "8.5"=rcp[4])
 if(length(gbm) > 1) gbms <- levels(d$GBM)
 gcms <- levels(d$Model)[-1]
 regions <- c("Chugach N.F."="CGF", "Copper River"="CRS", "Delta"="DAS", "Fairbanks"="FAS",
-             "Galena"="GAD", "Military"="MID", "Southwest"="SWS", "Tanana"="TAD", 
+             "Galena"="GAD", "Kenai/Kodiak"="KKS", "Military"="MID", "Anchorage Mat-Su"="MSS", "Southwest"="SWS", "Tanana"="TAD", 
              "Tok"="TAS", "Upper Yukon"="UYD")
 veg <- levels(d$Vegetation)
+names(veg) <- veg
+names(veg)[which(veg=="All")] <- "Aggregate"
 period <- range(c(h$Year, d$Year))
 variables <- levels(d$Var)
 stats <- c("Mean", "Min", "Max")
