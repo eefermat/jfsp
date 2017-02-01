@@ -9,6 +9,7 @@ function(request){
       #tags$head(includeScript("ga-nwtapp.js"), includeScript("ga-allapps.js")),
     ),
     dashboardSidebar(
+      introjsUI(),
       useToastr(),
       sidebarMenu(
         id="tabs",
@@ -23,6 +24,7 @@ function(request){
           menuSubItem("Stand age", tabName="vegage")
         )
       ),
+      actionButton("help", "Take tour", style=action_btn_style, class="btn-flat action-button btn-block", icon=icon("question-circle")),
       #bookmarkButton(style=action_btn_style, class="btn-flat action-button btn-block")
       actionButton("fake", "Bookmark", style=action_btn_style, class="btn-flat action-button btn-block", icon=icon("link")) # placeholder
     ),

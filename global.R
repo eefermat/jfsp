@@ -1,3 +1,4 @@
+library(rintrojs)
 library(leaflet)
 library(shiny)
 library(shinyBS)
