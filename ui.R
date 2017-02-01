@@ -1,3 +1,5 @@
+faq <- source("faq.R", local=TRUE)[[1]]
+
 function(request){
   dashboardPage(
     dashboardHeader(
@@ -22,7 +24,8 @@ function(request){
         menuItem("Vegetation", icon=icon("tree"), badgeColor="green",
           menuSubItem("Cover area", tabName="vegarea"),
           menuSubItem("Stand age", tabName="vegage")
-        )
+        ),
+        menuItem("Information", icon=icon("info-circle"), tabName="info")
       ),
       actionButton("help", "Take tour", style=action_btn_style, class="btn-flat action-button btn-block", icon=icon("question-circle")),
       #bookmarkButton(style=action_btn_style, class="btn-flat action-button btn-block")
@@ -39,7 +42,7 @@ function(request){
             column(6, leafletOutput("Map", width="100%", height="500px")),
             column(6,
               selectInput("regions", "Fire Mgmt Zones", choices=regions, selected="", multiple=TRUE, width="100%"),
-              selectInput("veg", "Vegetation", choices=veg, selected="All", multiple=TRUE, width="100%"),
+              selectInput("veg", "Vegetation", choices=veg, selected="Black Spruce", multiple=TRUE, width="100%"),
               selectInput("gcms", "GCM", choices=gcms, selected=gcms, multiple=TRUE, width="100%"),
               fluidRow(
                 column(6, selectInput("rcps", "RCP", choices=rcps, selected=rcps, multiple=TRUE, width="100%")),
@@ -72,7 +75,13 @@ function(request){
         mainModUI(id="mod_firefreq", tab_name="firefreq"),
         mainModUI(id="mod_firesize", tab_name="firesize"),
         mainModUI(id="mod_vegarea", tab_name="vegarea"),
-        mainModUI(id="mod_vegage", tab_name="vegage")
+        mainModUI(id="mod_vegage", tab_name="vegage"),
+        tabItem(tabName="info",
+          h2("Frequently asked questions"),
+          faq,
+          h2("Contact information"),
+          p("For questions about this application, please email paul.duffy@neptuneinc.org")
+        )
       )
     ),
     title="JFSP"
