@@ -8,24 +8,48 @@ shinyServer(function(input, output, session) {
   source("observers.R", local=TRUE) # observers related to region selection using map and selectInput
   
   # Initialize map and add flammability polygon layer
-  mapSelect <- leaflet() %>% addTiles() %>% setView(lon, lat, 4) %>%
-    addPolygons(data=flam, stroke=TRUE, fillOpacity=0.2, weight=1, color="red", group="flammable")
-  # Add background polygon region outlines after map is created
-  for(i in fmz$REGION) mapSelect <- mapSelect %>%
-         addPolygons(data=subset(fmz, REGION==i), stroke=TRUE, fillOpacity=0, weight=1, color="black", group="not_selected", layerId=i, label=i,
-                     highlightOptions=highlightOptions(opacity=1, weight=2, fillOpacity=0, bringToFront=FALSE, sendToBack=FALSE))
-  output$Map <- renderLeaflet(mapSelect)
+  mapSelect <- reactive({
+    progress <- shiny::Progress$new()
+    on.exit(progress$close())
+    progress$set(message="Generating zone map", value=0)
+    z <- fmz$REGION
+    n <- 1 + length(z)
+    x <- leaflet() %>% addTiles() %>% setView(lon, lat, 4) %>%
+      addPolygons(data=flam, stroke=TRUE, fillOpacity=0.2, weight=1, color="red", group="flammable")
+    progress$inc(1/n, detail="Basemap built")
+    #Sys.sleep(1)
+    # Add background polygon region outlines after map is created
+    for(i in seq_along(z)){
+      x <- x %>% addPolygons(data=subset(fmz, REGION==z[i]), stroke=TRUE, fillOpacity=0, weight=1,
+        color="black", group="not_selected", layerId=z[i], label=z[i],
+        highlightOptions=highlightOptions(opacity=1, weight=2, fillOpacity=0, 
+          bringToFront=FALSE, sendToBack=FALSE))
+      progress$inc((i+1)/n, detail=paste("Adding polygon", i))
+    }
+    x
+  })
+  
+  output$Map <- renderLeaflet(mapSelect())
   outputOptions(output ,"Map", suspendWhenHidden=FALSE)
   
-  d1 <- reactive({
-    getSubset <- function(x) filter(x, 
-      RCP %in% c("Historical", input$rcps) & Model %in% c("CRU 3.2", input$gcms) &
-        Region %in% input$regions & Vegetation %in% input$veg &
-        Year >= input$yrs[1] & Year <= input$yrs[2]) %>%
-      select_(.dots=c("RCP", "Model", "Region", "Var", "Vegetation", "Year", input$stat))
-    x <- getSubset(d)
-    if(input$yrs[1] < 2014) x <- bind_rows(getSubset(h), x)
+  d1 <- reactive({withProgress({
+    i <- list(input$rcps, input$gcms, input$regions, input$veg, input$yrs, input$stat)
+    dots <- c("RCP", "Model", "Region", "Var", "Vegetation", "Year", i[[6]])
+    if(any(sapply(i, is.null))){
+      x <- slice(d, 0) 
+    } else {
+      getSubset <- function(x) filter(x, 
+        RCP %in% c("Historical", i[[1]]) & Model %in% c("CRU 3.2", i[[2]]) &
+          Region %in% i[[3]] & Vegetation %in% i[[4]] &
+          Year >= i[[5]][1] & Year <= i[[5]][2]) %>%
+        select_(.dots=dots)
+      
+      x <- getSubset(d)
+      #Sys.sleep(1)
+      if(i[[5]][1] < 2014) x <- bind_rows(getSubset(h), x)
+    }
     x %>% split(.$Var) %>% map(~droplevels(.x))
+    }, message="Subsetting data...", value=1)
   })
   
   d1sum <- reactive({ map(d1(), ~summary(.x)) })
