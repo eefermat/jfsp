@@ -5,7 +5,8 @@ mods <- paste0("mod_", tab_ids)
 
 shinyServer(function(input, output, session) {
   
-  source("observers.R", local=TRUE) # observers related to region selection using map and selectInput
+  source("observers.R", local=TRUE) # map and region selectInput observers
+  source("tour.R", local=TRUE) # introjs tour
   
   # Initialize map and add flammability polygon layer
   mapSelect <- reactive({
@@ -21,7 +22,7 @@ shinyServer(function(input, output, session) {
     # Add background polygon region outlines after map is created
     for(i in seq_along(z)){
       x <- x %>% addPolygons(data=subset(fmz, REGION==z[i]), stroke=TRUE, fillOpacity=0, weight=1,
-        color="black", group="not_selected", layerId=z[i], label=z[i],
+        color="black", group="not_selected", layerId=z[i], label=names(regions)[i],
         highlightOptions=highlightOptions(opacity=1, weight=2, fillOpacity=0, 
           bringToFront=FALSE, sendToBack=FALSE))
       progress$inc((i+1)/n, detail=paste("Adding polygon", i))
