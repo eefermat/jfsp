@@ -11,8 +11,9 @@ function(request){
       #tags$head(includeScript("ga-nwtapp.js"), includeScript("ga-allapps.js")),
     ),
     dashboardSidebar(
-      introjsUI(),
       useToastr(),
+      introjsUI(),
+      #tags$style(HTML(".myijs { min-width: 800px; max-width: 800px; }")),
       sidebarMenu(
         id="tabs",
         menuItem("Data", icon=icon("sliders"), tabName="data"),
@@ -27,9 +28,11 @@ function(request){
         ),
         menuItem("Information", icon=icon("info-circle"), tabName="info")
       ),
+      conditionalPanel("output.Map != null",
       actionButton("help", "Take tour", style=action_btn_style, class="btn-flat action-button btn-block", icon=icon("question-circle")),
       #bookmarkButton(style=action_btn_style, class="btn-flat action-button btn-block")
       actionButton("fake", "Bookmark", style=action_btn_style, class="btn-flat action-button btn-block", icon=icon("link")) # placeholder
+      )
     ),
     dashboardBody(
       includeCSS("www/styles.css"),
@@ -39,7 +42,12 @@ function(request){
       tabItems(
         tabItem(tabName="data",
           fluidRow(
-            column(6, leafletOutput("Map", width="100%", height="500px")),
+            column(6,
+              div(id="plot-container",
+                  leafletOutput("Map", width="100%", height="500px"),
+                  conditionalPanel("output.Map == null", tags$img(src="spinner.gif", id="loading-spinner"))
+              )
+            ),
             column(6,
               selectInput("regions", "Fire Mgmt Zones", choices=regions, selected="", multiple=TRUE, width="100%"),
               selectInput("veg", "Vegetation", choices=veg, selected="Black Spruce", multiple=TRUE, width="100%"),
@@ -67,7 +75,7 @@ function(request){
                 tabPanel("Burn area", verbatimTextOutput("filtered_ba"), icon=icon("fire", lib="glyphicon")),
                 tabPanel("Full table", div(DT::dataTableOutput("filtered_data"), style="font-size: 100%"), icon=icon("sliders")),
                 id="summary", selected="Full table", title="Full table subset and summaries", width=12, side="right"
-              ), title="Current data selections", status="primary", solidHeader=TRUE, width=12, collapsible=TRUE
+              ), id="summarybox", title="Current data selections", status="primary", solidHeader=TRUE, width=12, collapsible=TRUE
             )
           )
         ),
