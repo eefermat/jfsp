@@ -64,8 +64,8 @@ denMod <- function(input, output, session, data){
   output$info1 <- renderText({ mouseInfo(input$plot1_clk, input$plot1_dblclk, input$plot1_hov, input$plot1_brush) })
   output$info2 <- renderText({ mouseInfo(input$plot2_clk, input$plot2_dblclk, input$plot2_hov, input$plot2_brush) })
   
-  #outputOptions(output, "plot1", suspendWhenHidden=FALSE)
-  #outputOptions(output, "plot2", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot1", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot2", suspendWhenHidden=FALSE)
 }
 
 tsMod <- function(input, output, session, data){
@@ -175,8 +175,8 @@ tsMod <- function(input, output, session, data){
     actionButton(ns("btn_modal_table"), "Show selections", icon("list"), class="btn-block")
   })
   
-  #outputOptions(output, "plot1", suspendWhenHidden=FALSE)
-  #outputOptions(output, "plot2", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot1", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot2", suspendWhenHidden=FALSE)
   #outputOptions(output, "Selected_obs", suspendWhenHidden=FALSE) # something wrong with reactive behavior here
 }
 
@@ -454,8 +454,8 @@ decMod <- function(input, output, session, data){
     )
   })
   
-  #outputOptions(output, "plot1", suspendWhenHidden=FALSE)
-  #outputOptions(output, "plot2", suspendWhenHidden=FALSE)
-  #outputOptions(output, "statBoxes1", suspendWhenHidden=FALSE)
-  #outputOptions(output, "statBoxes2", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot1", suspendWhenHidden=FALSE)
+  outputOptions(output, "plot2", suspendWhenHidden=FALSE)
+  outputOptions(output, "statBoxes1", suspendWhenHidden=FALSE)
+  outputOptions(output, "statBoxes2", suspendWhenHidden=FALSE)
 }
