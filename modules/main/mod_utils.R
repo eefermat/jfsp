@@ -142,6 +142,30 @@ interact <- function(x){
   g
 }
 
+primeAxis <- function(stat, variable, prefix=NULL, suffix=NULL, transform=""){
+  v <- tolower(variable)
+  if(v=="fire count") v <- "number of fires"
+  if(v=="vegetated area") v <- "cover area"
+  if(v=="vegetation age") v <- "stand age"
+  if(transform=="Square root"){
+    transform <- if(v=="number of fires") "Sq. root" else "sq. root"
+  } else if(transform=="Log"){
+    transform <- if(v=="number of fires") "Log" else "log"
+  } else if(transform != ""){
+    transform <- ""
+  }
+  x <- paste(switch(stat, "Mean"="Mean", "Min"="Minimum", "Max"="Maximum"), v)
+  if(!is.null(prefix)) x <- paste(prefix, tolower(x))
+  if(!is.null(suffix)) x <- paste(x, suffix)
+  if(v=="number of fires" & transform != "") x <- tolower(x)
+  switch(v,
+    "burn area"=bquote(.(x)~(.(transform)~km^2)),
+    "number of fires"=bquote(.(transform)~.(x)),
+    "fire size"=bquote(.(x)~(.(transform)~km^2)), 
+    "cover area"=bquote(.(x)~(.(transform)~km^2)), 
+    "stand age"=bquote(.(x)~(.(transform)~years)))
+}
+
 mouseLog <- function(x, ns, width){
   if(x) column(width,
          "Mouse feedback: plot 1", verbatimTextOutput(ns("info1")),
