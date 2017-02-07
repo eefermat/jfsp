@@ -12,7 +12,11 @@ tsPlot <- function(type, limits){
     d_keep <- group_by_(keep(), .dots=grp) %>%
       mutate_(Cumulative_total=lazyeval::interp(~cumsum(x), x=as.name(stat())))
     statname <- "Cumulative_total"
-  } else d_keep <- keep()
+    ylab <- axislab2()
+  } else {
+    d_keep <- keep()
+    ylab <- axislab()
+  }
   
   g <- ggplot(data=d(), aes_string(x, statname, colour=colorby()))
   if(input$addLines) g <- g + geom_line(data=d_keep, aes_string(group=plotInteraction()), alpha=alpha)
@@ -35,5 +39,5 @@ tsPlot <- function(type, limits){
   }
   g <- g + coord_cartesian(xlim=limits[[1]], ylim=limits[[2]]) + theme_bw(base_size=14)
   g <- .colorFacet(g, d(), colorby(), colorvec(), input$facetby, input$facet_scales)
-  g + plottheme
+  g + plottheme + labs(y=ylab)
 }

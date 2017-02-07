@@ -3,13 +3,13 @@ decPlot <- function(type, limits){
   if(preventPlot()) return()
   pos <- .getPosition(input$jitter, colorby(), dodgeable=TRUE)
   grp <- c("RCP", "Model", "Region", "Var", "Vegetation")
-  statname <- stat()
   
   if(type=="barplot"){
     d_keep <- keep_dec()
-    statname <- "Decadal_mean"
+    ylab <- axislab2()
   } else {
     d_keep <- keep()
+    ylab <- axislab()
   }
   x <- "Decade"
 
@@ -23,7 +23,7 @@ decPlot <- function(type, limits){
   alphaHalf <- alpha/2
   barpos <- input$barpos
   
-  g2 <- g <- ggplot(data=d_source, aes_string(x, statname, colour=clrby, fill=clrby))
+  g2 <- g <- ggplot(data=d_source, aes_string(x, stat(), colour=clrby, fill=clrby))
   
   if(type=="boxplot"){
     doBox <- input$bptype %in% c("Box plot", "Overlay")
@@ -113,5 +113,5 @@ decPlot <- function(type, limits){
   
   g <- g + coord_cartesian(xlim=limits[[1]], ylim=limits[[2]]) + theme_bw(base_size=14)
   g <- .colorFacet(g, d_source, clrby, clrvec, fctby, fctscales)
-  g + plottheme
+  g + plottheme + labs(y=ylab)
 }

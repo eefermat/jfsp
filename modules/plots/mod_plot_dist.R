@@ -1,6 +1,7 @@
 # Distributions - densities and histograms
 distPlot <- function(type, limits){
   if(is.null(colorby())) clr <- "white" else clr <- "black"
+  ylab <- paste(yrs()[1], "-", yrs()[2], "density")
   g <- ggplot(data=d(), aes_string(stat(), group=plotInteraction()))
   if(type=="density"){
     g <- g + geom_line(aes_string(colour=colorby()), stat="density", alpha=input$alpha)
@@ -13,5 +14,5 @@ distPlot <- function(type, limits){
   }
   g <- g + theme_bw(base_size=14) #+ scale_y_continuous(expand = c(0, 0.5))
   g <- .colorFacet(g, d(), colorby(), colorvec(), input$facetby, input$facet_scales)
-  g + plottheme
+  g + plottheme + labs(x=axislab(), y=ylab)
 }
