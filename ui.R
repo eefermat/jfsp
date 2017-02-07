@@ -67,16 +67,15 @@ function(request){
           ),
           br(),
           fluidRow(
-            box(
-              tabBox(
-                tabPanel("Stand age", verbatimTextOutput("filtered_a"), icon=icon("tree")),
-                tabPanel("Cover area", verbatimTextOutput("filtered_v"), icon=icon("tree")),
-                tabPanel("Fire size", verbatimTextOutput("filtered_fs"), icon=icon("fire", lib="glyphicon")),
-                tabPanel("Fire count", verbatimTextOutput("filtered_fc"), icon=icon("fire", lib="glyphicon")),
-                tabPanel("Burn area", verbatimTextOutput("filtered_ba"), icon=icon("fire", lib="glyphicon")),
-                tabPanel("Full table", div(DT::dataTableOutput("filtered_data"), style="font-size: 100%"), icon=icon("sliders")),
-                id="summary", selected="Full table", title="Full table subset and summaries", width=12, side="right"
-              ), id="summarybox", title="Current data selections", status="primary", solidHeader=TRUE, width=12, collapsible=TRUE
+            box(title="", status="primary", width=12, height=0),
+            tabBox(
+              tabPanel("Stand age", verbatimTextOutput("filtered_a"), icon=icon("tree")),
+              tabPanel("Cover area", verbatimTextOutput("filtered_v"), icon=icon("tree")),
+              tabPanel("Fire size", verbatimTextOutput("filtered_fs"), icon=icon("fire", lib="glyphicon")),
+              tabPanel("Fire count", verbatimTextOutput("filtered_fc"), icon=icon("fire", lib="glyphicon")),
+              tabPanel("Burn area", verbatimTextOutput("filtered_ba"), icon=icon("fire", lib="glyphicon")),
+              tabPanel("Full table", div(DT::dataTableOutput("filtered_data"), style="font-size: 100%"), icon=icon("sliders")),
+              id="summary", selected="Full table", title="Full table subset and summaries", width=12, side="right"
             )
           )
         ),

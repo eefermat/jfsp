@@ -134,7 +134,7 @@ tour.element <- c(
   "#shiny-tab-data", 
   "#tabs", "#Map", "#flammable", "#Map", "#regions + .selectize-control", "#btn_staticmap",
   "#veg + .selectize-control", "#tabs",
-  "#summarybox", "#summary", dv("Full table", quote=F), dv("Burn area", quote=F), dv("Cover area", quote=F),
+  "#summary", "#summary", dv("Full table", quote=F), dv("Burn area", quote=F), dv("Cover area", quote=F),
   "#gcms + .selectize-control", "#rcps + .selectize-control", "#stat + .selectize-control", ".js-irs-0", 
   "#shiny-tab-data", "#shiny-tab-burnarea"
 )
