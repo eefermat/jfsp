@@ -52,6 +52,8 @@ denMod <- function(input, output, session, data){
     }
   })
   
+  yrs <- reactive({ range(d()$Year) })
+  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform) })
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   preventPlot <- reactive({ nrow(d())==0 | d()$Var[1]!=variable() })
@@ -128,6 +130,9 @@ tsMod <- function(input, output, session, data){
     }
   })
   
+  yrs <- reactive({ range(d()$Year) })
+  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform) })
+  axislab2 <- reactive({ primeAxis(stat(), variable(), prefix="Cumulative total", transform=input$transform) })
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   
@@ -198,7 +203,9 @@ decMod <- function(input, output, session, data){
   
   keep_dec <- reactive({
     if(is.null(keep())) return()
-    summarise_(keep(), Decadal_mean=lazyeval::interp(~mean(x), x=as.name(stat())))
+    x <- setNames("Decadal_mean", stat())
+    summarise_(keep(), Decadal_mean=lazyeval::interp(~mean(x), x=as.name(stat()))) %>%
+      rename_(.dots=x)
   })
   
   rv_plots <- reactiveValues(
@@ -321,6 +328,9 @@ decMod <- function(input, output, session, data){
     rv_plots$keeprows2 <- rep(TRUE, nrow(keep_dec()))
   })
   
+  yrs <- reactive({ range(d()$Year) })
+  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform) })
+  axislab2 <- reactive({ primeAxis(stat(), variable(), suffix="decadal mean", transform=input$transform) })
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   
@@ -387,17 +397,18 @@ decMod <- function(input, output, session, data){
     } else{
       x <- keep_dec()
     }
-    y <- "Decadal_mean"
     
     if(preventPlot() || nrow(x)==0) return()
-    x <- group_by(x, Decade) %>% summarise(Decadal_mean=mean(Decadal_mean))
-    idx.mn <- which.min(x$Decadal_mean)
-    idx.mx <- which.max(x$Decadal_mean)
-    idx.dn <- if(nrow(x)==1) NA else seq(which.min(diff(x$Decadal_mean)), length.out=2)
-    idx.up <- if(nrow(x)==1) NA else seq(which.max(diff(x$Decadal_mean)), length.out=2)
-    tot <- tail(x$Decadal_mean, 1) - x$Decadal_mean[1]
+    dots <- paste0("mean(", stat(), ")")
+    x <- group_by(x, Decade) %>% summarise_(.dots=list(Decadal_mean=dots)) %>%
+      rename_(.dots=setNames("Decadal_mean", stat()))
+    idx.mn <- which.min(x[[stat()]])
+    idx.mx <- which.max(x[[stat()]])
+    idx.dn <- if(nrow(x)==1) NA else seq(which.min(diff(x[[stat()]])), length.out=2)
+    idx.up <- if(nrow(x)==1) NA else seq(which.max(diff(x[[stat()]])), length.out=2)
+    tot <- tail(x[[stat()]], 1) - x[[stat()]][1]
     tot2 <- ifelse(tot < 1 & tot > 0, 1, ifelse(tot < 0 & tot > -1, -1, round(tot)))
-    pct <- paste0(round(100*(tail(x$Decadal_mean, 1) / x$Decadal_mean[1] - 1)), "%")
+    pct <- paste0(round(100*(tail(x[[stat()]], 1) / x[[stat()]][1] - 1)), "%")
     
     
     if(input$transform=="Baseline anomalies"){
@@ -411,10 +422,10 @@ decMod <- function(input, output, session, data){
     
     clrs <- c("yellow", "orange", "purple", "red", "blue", "navy")
     statval <- list(
-      mn=round(x$Decadal_mean[idx.mn]),
-      mx=round(x$Decadal_mean[idx.mx]),
-      dn=if(is.na(idx.dn[1])) NA else round(diff(x$Decadal_mean)[idx.dn[1]]),
-      up=if(is.na(idx.up[1])) NA else round(diff(x$Decadal_mean)[idx.up[1]]),
+      mn=round(x[[stat()]][idx.mn]),
+      mx=round(x[[stat()]][idx.mx]),
+      dn=if(is.na(idx.dn[1])) NA else round(diff(x[[stat()]])[idx.dn[1]]),
+      up=if(is.na(idx.up[1])) NA else round(diff(x[[stat()]])[idx.up[1]]),
       totdif=tot2,
       totpct=pct
     )
