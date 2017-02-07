@@ -41,6 +41,7 @@ function(request){
       ),
       tabItems(
         tabItem(tabName="data",
+          fluidRow(column(12, temptext)),
           fluidRow(
             column(6,
               div(id="plot-container",
