@@ -52,9 +52,8 @@ d <- prepData(dp, files.p)
 rcps <- c("4.5"=rcp[2], "6.0"=rcp[3], "8.5"=rcp[4])
 if(length(gbm) > 1) gbms <- levels(d$GBM)
 gcms <- levels(d$Model)[-1]
-regions <- c("Chugach N.F."="CGF", "Copper River"="CRS", "Delta"="DAS", "Fairbanks"="FAS",
-             "Galena"="GAD", "Kenai/Kodiak"="KKS", "Military"="MID", "Anchorage Mat-Su"="MSS", "Southwest"="SWS", "Tanana"="TAD", 
-             "Tok"="TAS", "Upper Yukon"="UYD")
+regions <- c("Delta"="DAS", "Fairbanks"="FAS", "Galena"="GAD", "Military"="MID",
+             "Southwest"="SWS", "Tanana"="TAD", "Tok"="TAS", "Upper Yukon"="UYD")
 veg <- levels(d$Vegetation)
 names(veg) <- veg
 names(veg)[which(veg=="All")] <- "Aggregate"
@@ -65,7 +64,7 @@ stats <- c("Mean", "Min", "Max")
 # Shapefiles
 library(rgdal)
 flam <- readOGR("shapefiles/flam_polygon.shp", verbose=FALSE)
-fmz <- readOGR("shapefiles/fmz_polygons.shp", verbose=FALSE)
+fmz <- readOGR("shapefiles/FireManagementZonesV3.shp", verbose=FALSE)
 
 # Save app workspace
 objs <- c('d', 'h', 'rcps', 'gcms', 'regions', 'veg', 'period', 'variables', 'stats', 'flam', 'fmz')
