@@ -157,13 +157,13 @@ observeEvent(input$help, {
     #"tooltipClass"="myijs",
     "showBullets"="false", "showProgress"="true", "showStepNumbers"="false")
   tour.events <- list(
-    "onchange"=paste0(
+    "onchange"=I(paste0(
       stepcb(stepEquals(c(1:19)), c(rmClass(not.db.data), goClass("data"))),
       stepcb(stepEquals(c(12)), c(rmClass(not.tb.fulltable), goClass("Full table"))),
       stepcb(stepEquals(c(13)), c(rmClass(not.tb.burnarea), goClass("Burn area"))),
       stepcb(stepEquals(c(14)), c(rmClass(not.tb.coverarea), goClass("Cover area"))),
       stepcb(stepEquals(c(20)), c(rmClass(not.db.burnarea), goClass("burnarea"))),
-      collapse="\n")#, ttWidth(c(3,5), "50%", "50%")
+      collapse="\n"))#, ttWidth(c(3,5), "50%", "50%")
   )
   introjs(session, options=tour.options, events=tour.events)
 })
