@@ -64,8 +64,7 @@ stats <- c("Mean", "Min", "Max")
 # Shapefiles
 library(rgdal)
 flam <- readOGR("shapefiles/flam_polygon.shp", verbose=FALSE)
-fmz <- readOGR("shapefiles/FireManagementZonesV3.shp", verbose=FALSE) %>%
-  spTransform("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+fmz <- readOGR("shapefiles/fmz_polygons.shp", verbose=FALSE)
 
 # Save app workspace
 objs <- c('d', 'h', 'rcps', 'gcms', 'regions', 'veg', 'period', 'variables', 'stats', 'flam', 'fmz')

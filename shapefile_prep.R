@@ -9,7 +9,7 @@ flam <- rasterToPolygons(flam, dissolve=TRUE) %>% spTransform(proj4)
 shapefile(flam, "shapefiles/flam_polygon.shp")
 
 # Prepped fire management zones shapefile
-fmz <- readOGR("shapefiles/FireManagementZonesV2.shp", verbose=FALSE)
+fmz <- readOGR("shapefiles/FireManagementZonesV3.shp", verbose=FALSE)
 fmz <- spTransform(fmz, proj4)
 fmz@data <- fmz@data[, names(fmz@data) %in% c("OBJECTID", "REGION")]
 shapefile(fmz, "shapefiles/fmz_polygons.shp")
