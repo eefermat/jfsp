@@ -6,7 +6,7 @@ function(request){
       title="JFSP Alfresco",
       tags$li(class="dropdown",
               tags$a(href="http://snap.uaf.edu", target="_blank",
-                     tags$img(src="SNAP_acronym_100px.png", width="100%", alt="SNAP"), style="margin: 10px; padding: 0px;")
+                     tags$img(src="SNAP_acronym_100px.png", width="100%", alt="SNAP"), style="padding: 10px; margin: 0px;")
       )
       #tags$head(includeScript("ga-nwtapp.js"), includeScript("ga-allapps.js")),
     ),
