@@ -7,7 +7,7 @@ gbm <- "5m" #c("3m", "5m")
 rcp <- c("Historical", "RCP 4.5", "RCP 6.0", "RCP 8.5")
 models <- c("CRU 3.2", "NCAR-CCSM4", "GFDL-CM3", "GISS-E2-R", "IPSL-CM5A-LR", "MRI-CGCM3")
 veg.drop <- c("Barren lichen-moss", "Temperate Rainforest")
-lev <- c("Black Spruce", "White Spruce", "Deciduous", "Shrub Tundra", "Graminoid Tundra", "Wetland Tundra", "All")
+lev <- c("Black Spruce", "White Spruce", "Deciduous", "Alpine Tundra", "Shrub Tundra", "Graminoid Tundra", "Wetland Tundra", "All")
 stats.drop <- paste0("-Pct_", c("05", 10, 25, 50, 75, 90, 95))
 
 # workspace files
