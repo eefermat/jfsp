@@ -6,7 +6,7 @@ library(shinydashboard)
 library(shinytoastr)
 library(DT)
 
-library(rgdal)
+library(sp)
 library(lazyeval)
 library(dplyr)
 library(purrr)
