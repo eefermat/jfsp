@@ -7,6 +7,7 @@ tsPlot <- function(type, limits){
   x <- "Year"
   statname <- stat()
   alpha <- input$alpha
+  reg <- input$addReg
   
   if(type=="cumulative"){
     d_keep <- group_by_(keep(), .dots=grp) %>%
@@ -23,7 +24,14 @@ tsPlot <- function(type, limits){
   if(type=="raw") ts_brush <- input$plot1_brush else ts_brush <- input$plot2_brush
   g2 <- g
   g2 <- g2 + geom_point(data=d_keep, size=3, alpha=alpha, position=pos)
-  if(type=="raw") g2 <- g2 + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.3)
+  if(type=="raw") g2 <- g2 + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=alpha/2)
+  if(reg){
+    g2 <- if(is.null(colorby())) g2 + geom_smooth(data=d_keep, method='lm', se=FALSE, colour="black") else
+      g2 + geom_smooth(data=d_keep, method='lm', se=FALSE)
+    g2 <- g2 + stat_poly_eq(data=d_keep, formula=y ~ x,
+      eq.with.lhs="italic(hat(y))~`=`~", eq.x.rhs="~italic(Year)",
+      aes(y=Mean, label=paste(..eq.label.., ..rr.label.., sep = "~~~")), parse=TRUE)
+  }
   if(!is.null(ts_brush)){
     d_keep2 <- brushedPoints(d_keep, ts_brush)
     if(nrow(d_keep2)!=0){
@@ -33,7 +41,14 @@ tsPlot <- function(type, limits){
     }
     if(nrow(d_keep)!=0) g <- g + geom_point(data=d_keep, size=3, alpha=alpha/2, position=pos)
     g <- g + geom_point(data=d_keep2, size=3, alpha=alpha, position=pos)
-    if(type=="raw") g <- g + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=0.3)
+    if(type=="raw") g <- g + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=alpha/2)
+    if(reg){
+      g <- if(is.null(colorby())) g + geom_smooth(data=d_keep2, method='lm', se=FALSE, colour="black") else
+        g + geom_smooth(data=d_keep2, method='lm', se=FALSE)
+      g <- g + stat_poly_eq(data=d_keep2, formula=y ~ x,
+        eq.with.lhs="italic(hat(y))~`=`~", eq.x.rhs="~italic(Year)",
+        aes(label=paste(..eq.label.., ..rr.label.., sep = "~~~")), parse=TRUE)
+    }
   } else {
     g <- g2
   }
