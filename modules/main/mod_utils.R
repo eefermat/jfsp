@@ -177,11 +177,12 @@ inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main=""
   bpOpts <- c("Box plot", "Strip chart", "Overlay")
   barposOpts <- c("Dodge", "Stack", "Proportions"="fill")
   zoomOpts <- c("Zoom only", "Subset data")
-  lab <- list(trans="Apply transform", lines="Connect points with lines", togPts="Toggle selected points",
-    resPts="Reset points", selObs="Selected observations", jit="Jitter points", bpObs="Observations",
-    bars="Grouped bars", zoom="Zoom behavior", bins="Histogram bins (approx.)", alpha="Semi-transparency")
+  lab <- list(trans="Apply transform", reg="Overlay regression", lines="Connect points with lines", 
+    togPts="Toggle selected points", resPts="Reset points", selObs="Selected observations", 
+    jit="Jitter points", bpObs="Observations", bars="Grouped bars", zoom="Zoom behavior", 
+    bins="Histogram bins (approx.)", alpha="Semi-transparency")
   
-  addLinesInput <- togInput <- togModal <- jitterInput <- binsInput <- 
+  addRegInput <- addLinesInput <- togInput <- togModal <- jitterInput <- binsInput <- 
     zoomInput <- bpInput <- barposInput <- deltaINput <- NULL
   
   transformsInput <- if(!is.null(transforms)) 
@@ -189,6 +190,7 @@ inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main=""
                    options=list(placeholder='Apply transform...')) else NULL
   
   if(type=="ts"){
+    addRegInput <- checkboxInput(ns("addReg"), lab$reg, TRUE, width="100%")
     addLinesInput <- checkboxInput(ns("addLines"), lab$lines, width="100%")
     togInput <- tagList(
       actionButton(ns("exclude_toggle"), lab$togPts, class="btn-block"),
@@ -225,10 +227,9 @@ inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main=""
         transformsInput,
         bsModal(ns("settings"), paste(main, "additional settings"), ns("btn_settings"), size="large",
           fluidRow(
-           column(3, sliderInput(ns("alpha"), lab$alpha, 0.1, 1, 1, 0.1, sep="", width="100%")),
-           column(3, selectInput(ns("facet_scales"), "Axis scales", choices=axis_scales, width="100%")),
-           column(3, binsInput, zoomInput, bpInput, barposInput, jitterInput),
-           column(3, addLinesInput)
+           column(4, sliderInput(ns("alpha"), lab$alpha, 0.1, 1, 1, 0.1, sep="", width="100%")),
+           column(4, selectInput(ns("facet_scales"), "Axis scales", choices=axis_scales, width="100%")),
+           column(4, binsInput, zoomInput, bpInput, barposInput, jitterInput, addLinesInput, addRegInput)
           )
         ),
         togInput,
