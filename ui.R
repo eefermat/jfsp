@@ -45,8 +45,11 @@ function(request){
           fluidRow(
             column(6,
               div(id="plot-container",
-                  leafletOutput("Map", width="100%", height="500px"),
-                  conditionalPanel("output.Map == null", tags$img(src="spinner.gif", id="loading-spinner"))
+                leafletOutput("Map", width="100%", height="500px"),
+                conditionalPanel("output.Map == null", 
+                  h4("Loading map", style="position: absolute; left: 0; top: 35%; right: 0; text-align: center;"),
+                  tags$img(src="spinner.gif", id="loading-spinner")
+                )
               )
             ),
             column(6,
@@ -60,7 +63,10 @@ function(request){
               sliderInput("yrs", "Years", min=period[1], max=period[2], value=c(2014, 2099), step=1, sep="", width="100%"),
               fluidRow(
                 column(6, actionButton("btn_staticmap", "Detailed FMZ map", class="btn-block", icon("globe"))),
-                column(6, checkboxInput("flammable", "Show flammable region", TRUE, width="100%"))
+                column(6,
+                  conditionalPanel("output.Map != null",
+                    checkboxInput("flammable", "Show flammable region", TRUE, width="100%"))
+                )
                 
               )
             )
