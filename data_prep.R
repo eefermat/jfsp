@@ -1,6 +1,6 @@
 library(dplyr)
 library(purrr)
-library(ggplot2)
+#library(feather)
 
 # setup
 gbm <- "5m" #c("3m", "5m")
@@ -66,7 +66,12 @@ library(rgdal)
 flam <- readOGR("shapefiles/flam_polygon.shp", verbose=FALSE)
 fmz <- readOGR("shapefiles/fmz_polygons.shp", verbose=FALSE)
 
-# Save app workspace
+# Save app data
+#write_feather(d, "appData/df_proj.feather")
+#write_feather(h, "appData/df_hist.feather")
+#saveRDS(flam, "appData/flam.rds")
+#saveRDS(fmz, "appData/fmz.rds")
+#objs <- c('rcps', 'gcms', 'regions', 'veg', 'period', 'variables', 'stats')
 objs <- c('d', 'h', 'rcps', 'gcms', 'regions', 'veg', 'period', 'variables', 'stats', 'flam', 'fmz')
 if(length(gbm) > 1) objs <- c(objs, gbms)
-save(list=objs, file="appData.RData")
+save(list=objs, file="appData/appData.RData")
