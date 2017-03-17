@@ -174,22 +174,24 @@ mouseLog <- function(x, ns, width){
 }
 
 inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main="", width){
+  regposOpts <- c("Top left", "Top right", "Bottom left", "Bottom right")
   bpOpts <- c("Box plot", "Strip chart", "Overlay")
   barposOpts <- c("Dodge", "Stack", "Proportions"="fill")
   zoomOpts <- c("Zoom only", "Subset data")
-  lab <- list(trans="Apply transform", reg="Overlay regression", lines="Connect points with lines", 
-    togPts="Toggle selected points", resPts="Reset points", selObs="Selected observations", 
-    jit="Jitter points", bpObs="Observations", bars="Grouped bars", zoom="Zoom behavior", 
-    bins="Histogram bins (approx.)", alpha="Semi-transparency")
+  lab <- list(trans="Apply transform", regpos="Regression summary", reg="Overlay regression", 
+    lines="Connect points with lines", togPts="Toggle selected points", resPts="Reset points",
+    selObs="Selected observations", jit="Jitter points", bpObs="Observations", bars="Grouped bars",
+    zoom="Zoom behavior", bins="Histogram bins (approx.)", alpha="Semi-transparency")
   
-  addRegInput <- addLinesInput <- togInput <- togModal <- jitterInput <- binsInput <- 
-    zoomInput <- bpInput <- barposInput <- deltaINput <- NULL
+  regPosInput <- addRegInput <- addLinesInput <- togInput <- togModal <- jitterInput <- 
+    binsInput <- zoomInput <- bpInput <- barposInput <- deltaINput <- NULL
   
   transformsInput <- if(!is.null(transforms)) 
     selectizeInput(ns("transform"), lab$trans, c("", transforms), width="100%",
                    options=list(placeholder='Apply transform...')) else NULL
   
   if(type=="ts"){
+    regPosInput <- selectInput(ns("regpos"), lab$regpos, regposOpts, width="100%")
     addRegInput <- checkboxInput(ns("addReg"), lab$reg, TRUE, width="100%")
     addLinesInput <- checkboxInput(ns("addLines"), lab$lines, width="100%")
     togInput <- tagList(
@@ -228,7 +230,10 @@ inputsBox <- function(ns, grp, facet=grp, pooled, transforms=NULL, type, main=""
         bsModal(ns("settings"), paste(main, "additional settings"), ns("btn_settings"), size="large",
           fluidRow(
            column(4, sliderInput(ns("alpha"), lab$alpha, 0.1, 1, 1, 0.1, sep="", width="100%")),
-           column(4, selectInput(ns("facet_scales"), "Axis scales", choices=axis_scales, width="100%")),
+           column(4, 
+             selectInput(ns("facet_scales"), "Axis scales", choices=axis_scales, width="100%"), 
+             regPosInput
+            ),
            column(4, binsInput, zoomInput, bpInput, barposInput, jitterInput, addLinesInput, addRegInput)
           )
         ),

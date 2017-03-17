@@ -10,6 +10,7 @@ tsPlot <- function(type, limits){
   rhs <- "~italic(Year)"
   alpha <- input$alpha
   reg <- input$addReg
+  regpos <- strsplit(tolower(input$regpos), " ")[[1]]
   
   if(type=="cumulative"){
     d_keep <- group_by_(keep(), .dots=grp) %>%
@@ -31,6 +32,7 @@ tsPlot <- function(type, limits){
     g2 <- if(is.null(colorby())) g2 + geom_smooth(data=d_keep, method='lm', se=FALSE, colour="black") else
       g2 + geom_smooth(data=d_keep, method='lm', se=FALSE)
     g2 <- g2 + stat_poly_eq(data=d_keep, formula=y ~ x, eq.with.lhs=lhs, eq.x.rhs=rhs,
+      label.x.npc=regpos[2], label.y.npc=regpos[1],
       aes(label=paste(..eq.label.., ..rr.label.., sep = "~~~")), parse=TRUE, size=5)
   }
   if(!is.null(ts_brush)){
@@ -47,6 +49,7 @@ tsPlot <- function(type, limits){
       g <- if(is.null(colorby())) g + geom_smooth(data=d_keep2, method='lm', se=FALSE, colour="black") else
         g + geom_smooth(data=d_keep2, method='lm', se=FALSE)
       g <- g + stat_poly_eq(data=d_keep2, formula=y ~ x, eq.with.lhs=lhs, eq.x.rhs=rhs,
+        label.x.npc=regpos[2], label.y.npc=regpos[1],
         aes(label=paste(..eq.label.., ..rr.label.., sep = "~~~")), parse=TRUE, size=5)
     }
   } else {
