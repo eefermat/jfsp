@@ -9,7 +9,10 @@ shinyServer(function(input, output, session) {
   source("tour.R", local=TRUE) # introjs tour
   
   # Initialize map and add flammability polygon layer
+  ptm <- proc.time()
   mapSelect <- reactive({
+    ptm <- proc.time()
+    cat("Leaflet initialization time excluding renderLeaflet:\n")
     progress <- shiny::Progress$new()
     on.exit(progress$close())
     progress$set(message="Generating zone map", value=0)
@@ -27,6 +30,7 @@ shinyServer(function(input, output, session) {
           bringToFront=FALSE, sendToBack=FALSE))
       progress$inc((i+1)/n, detail=paste("Adding polygon", i))
     }
+    print(proc.time() - ptm)
     x
   })
   
