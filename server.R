@@ -9,7 +9,6 @@ shinyServer(function(input, output, session) {
   source("tour.R", local=TRUE) # introjs tour
   
   # Initialize map and add flammability polygon layer
-  ptm <- proc.time()
   mapSelect <- reactive({
     ptm <- proc.time()
     cat("Leaflet initialization time excluding renderLeaflet:\n")
