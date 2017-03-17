@@ -11,6 +11,7 @@ library(lazyeval)
 library(dplyr)
 library(purrr)
 library(ggplot2)
+library(ggpmisc)
 load("appData.RData")
 
 action_btn_style <- "margin: 10px 15px 10px 15px; width: 200px"
