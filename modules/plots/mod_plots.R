@@ -15,7 +15,6 @@ decModUI <- function(...){
 
 denMod <- function(input, output, session, data){
   ns <- session$ns
-  
   source("modules/plots/mod_plot_dist.R", local=TRUE)
   
   variable <- reactive({ as.character(data()$Var[1]) })
@@ -23,37 +22,10 @@ denMod <- function(input, output, session, data){
   d <- reactive({ plotDataPrep(data(), input$transform, input$pooled_vars, input$colorby, input$facetby, stat()) })
   
   rv_plots <- reactiveValues(x1=NULL, y1=NULL, x2=NULL, y2=NULL)
-  
-  # Distribution - density plot
-  
-  # Doubleclk observation
-  observeEvent(input$plot1_dblclk, {
-    brush <- input$plot1_brush
-    if (!is.null(brush)) {
-      rv_plots$x1 <- c(brush$xmin, brush$xmax)
-      rv_plots$y1 <- c(brush$ymin, brush$ymax)
-    } else {
-      rv_plots$x1 <- NULL
-      rv_plots$y1 <- NULL
-    }
-  })
-  
-  # Distribution - histogram
-  
-  # Doubleclk observation
-  observeEvent(input$plot2_dblclk, {
-    brush <- input$plot2_brush
-    if (!is.null(brush)) {
-      rv_plots$x2 <- c(brush$xmin, brush$xmax)
-      rv_plots$y2 <- c(brush$ymin, brush$ymax)
-    } else {
-      rv_plots$x2 <- NULL
-      rv_plots$y2 <- NULL
-    }
-  })
+  source("modules/plots/mod_plot_general_observers.R", local=TRUE)
   
   yrs <- reactive({ range(d()$Year) })
-  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform) })
+  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform, metric=metric()) })
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   preventPlot <- reactive({ nrow(d())==0 | d()$Var[1]!=variable() })
@@ -72,7 +44,6 @@ denMod <- function(input, output, session, data){
 
 tsMod <- function(input, output, session, data){
   ns <- session$ns
-  
   source("modules/plots/mod_plot_ts.R", local=TRUE)
   
   variable <- reactive({ as.character(data()$Var[1]) })
@@ -80,59 +51,12 @@ tsMod <- function(input, output, session, data){
   d <- reactive({ plotDataPrep(data(), input$transform, input$pooled_vars, input$colorby, input$facetby, stat()) })
   
   rv_plots <- reactiveValues(x1=NULL, y1=NULL, x2=NULL, y2=NULL, keeprows=rep(TRUE, nrow(isolate(d()))))
-  
-  # Time series plot annual
-  
-  # Doubleclk observation
-  observeEvent(input$plot1_dblclk, {
-    brush <- input$plot1_brush
-    if (!is.null(brush)) {
-      rv_plots$x1 <- c(brush$xmin, brush$xmax)
-      rv_plots$y1 <- c(brush$ymin, brush$ymax)
-    } else {
-      rv_plots$x1 <- NULL
-      rv_plots$y1 <- NULL
-    }
-  })
-  
-  observeEvent(d(), {
-    rv_plots$keeprows <- rep(TRUE, nrow(d()))
-  })
-  
-  # Toggle points that are clked
-  observeEvent(input$plot1_clk, {
-    res <- nearPoints(d(), input$plot1_clk, allRows=TRUE)
-    rv_plots$keeprows <- xor(rv_plots$keeprows, res$selected_)
-  })
-  
-  # Toggle points that are brushed, when button is clked
-  observeEvent(input$exclude_toggle, {
-    res <- brushedPoints(d(), input$plot1_brush, allRows=TRUE)
-    rv_plots$keeprows <- xor(rv_plots$keeprows, res$selected_)
-  })
-  
-  # Reset all points
-  observeEvent(input$exclude_reset, {
-    rv_plots$keeprows <- rep(TRUE, nrow(d()))
-  })
-  
-  # Time series plot cumulative
-  
-  # Doubleclk observation
-  observeEvent(input$plot2_dblclk, {
-    brush <- input$plot2_brush
-    if (!is.null(brush)) {
-      rv_plots$x2 <- c(brush$xmin, brush$xmax)
-      rv_plots$y2 <- c(brush$ymin, brush$ymax)
-    } else {
-      rv_plots$x2 <- NULL
-      rv_plots$y2 <- NULL
-    }
-  })
+  source("modules/plots/mod_plot_general_observers.R", local=TRUE)
+  source("modules/plots/mod_plot_ts_observers.R", local=TRUE)
   
   yrs <- reactive({ range(d()$Year) })
-  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform) })
-  axislab2 <- reactive({ primeAxis(stat(), variable(), prefix="Cumulative total", transform=input$transform) })
+  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform, metric=metric()) })
+  axislab2 <- reactive({ primeAxis(stat(), variable(), prefix="Cumulative total", transform=input$transform, metric=metric()) })
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   
@@ -187,7 +111,6 @@ tsMod <- function(input, output, session, data){
 
 decMod <- function(input, output, session, data){
   ns <- session$ns
-  
   source("modules/plots/mod_plot_dec.R", local=TRUE)
   
   variable <- reactive({ as.character(data()$Var[1]) })
@@ -213,124 +136,12 @@ decMod <- function(input, output, session, data){
     keeprows=rep(TRUE, nrow(isolate(keep()))),
     keeprows2=rep(TRUE, nrow(isolate(keep_dec()))),
     holdClick=NULL, holdBrush=NULL, holdClick2=NULL, holdBrush2=NULL)
-  
-  # Reset all points
-  observeEvent(input$exclude_reset, {
-    rv_plots$keeprows <- rep(TRUE, nrow(keep()))
-    rv_plots$keeprows2 <- rep(TRUE, nrow(keep_dec()))
-  })
-  
-  # Decadal series boxplot
-  
-  # Doubleclk observation
-  observeEvent(input$plot1_dblclk, {
-    brush <- input$plot1_brush
-    if (!is.null(brush)) {
-      rv_plots$x1 <- c(brush$xmin, brush$xmax)
-      rv_plots$y1 <- c(brush$ymin, brush$ymax)
-    } else {
-      rv_plots$x1 <- NULL
-      rv_plots$y1 <- NULL
-    }
-  })
-  
-  # Toggle points that are clked
-  observeEvent(input$plot1_clk, {
-    x <- input$plot1_clk
-    y <- rv_plots$holdClick
-    if(!is.null(x)){
-      if(is.null(y) || y$x!=x$x) rv_plots$holdClick <- x
-    }
-  })
-  
-  observeEvent(input$plot1_clk, {
-    x <- keep()$Decade
-    lvls <- levels(x)
-    clk <- input$plot1_clk
-    if(is.null(clk)) y <- rv_plots$holdClick else y <- clk
-    keep_lvls <- lvls[round(y$x)]
-    if(!length(keep_lvls) || is.na(keep_lvls)) keep_lvls <- lvls
-    if(any(rv_plots$keeprows!=(x==keep_lvls))) rv_plots$keeprows <- x %in% keep_lvls
-  })
-  
-  # Toggle points that are brushed in x axis direction (all y)
-  observeEvent(input$plot1_brush, {
-    x <- input$plot1_brush
-    if(!is.null(x)){
-      rv_plots$holdBrush <- x
-    }
-  })
-  
-  observeEvent(input$plot1_brush, {
-    x <- keep()$Decade
-    lvls <- levels(x)
-    brush <- input$plot1_brush
-    if(is.null(brush)) y <- rv_plots$holdBrush else y <- brush
-    intlvls <- round(y$xmin):round(y$xmax)
-    rv_plots$keeprows <- x %in% lvls[intlvls]
-  })
-  
-  observeEvent(keep(), {
-    rv_plots$keeprows <- rep(TRUE, nrow(keep()))
-  })
-  
-  # Decadal series barplot
-  
-  # Doubleclk observation
-  observeEvent(input$plot2_dblclk, {
-    brush <- input$plot2_brush
-    if (!is.null(brush)) {
-      rv_plots$x2 <- c(brush$xmin, brush$xmax)
-      rv_plots$y2 <- c(brush$ymin, brush$ymax)
-    } else {
-      rv_plots$x2 <- NULL
-      rv_plots$y2 <- NULL
-    }
-  })
-  
-  # Toggle points that are clked
-  observeEvent(input$plot2_clk, {
-    x <- input$plot2_clk
-    y <- rv_plots$holdClick2
-    if(!is.null(x)){
-      if(is.null(y) || y$x!=x$x) rv_plots$holdClick2 <- x
-    }
-  })
-  
-  observeEvent(input$plot2_clk, {
-    x <- keep_dec()$Decade
-    lvls <- levels(x)
-    clk <- input$plot2_clk
-    if(is.null(clk)) y <- rv_plots$holdClick2 else y <- clk
-    keep_lvls <- lvls[round(y$x)]
-    if(!length(keep_lvls) || is.na(keep_lvls)) keep_lvls <- lvls
-    if(any(rv_plots$keeprows2!=(x==keep_lvls))) rv_plots$keeprows2 <- x %in% keep_lvls
-  })
-  
-  # Toggle points that are brushed in x axis direction (all y)
-  observeEvent(input$plot2_brush, {
-    x <- input$plot2_brush
-    if(!is.null(x)){
-      rv_plots$holdBrush2 <- x
-    }
-  })
-  
-  observeEvent(input$plot2_brush, {
-    x <- keep_dec()$Decade
-    lvls <- levels(x)
-    brush <- input$plot2_brush
-    if(is.null(brush)) y <- rv_plots$holdBrush2 else y <- brush
-    intlvls <- round(y$xmin):round(y$xmax)
-    rv_plots$keeprows2 <- x %in% lvls[intlvls]
-  })
-  
-  observeEvent(keep_dec(), {
-    rv_plots$keeprows2 <- rep(TRUE, nrow(keep_dec()))
-  })
+  source("modules/plots/mod_plot_general_observers.R", local=TRUE)
+  source("modules/plots/mod_plot_dec_observers.R", local=TRUE)
   
   yrs <- reactive({ range(d()$Year) })
-  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform) })
-  axislab2 <- reactive({ primeAxis(stat(), variable(), suffix="decadal mean", transform=input$transform) })
+  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform, metric=metric()) })
+  axislab2 <- reactive({ primeAxis(stat(), variable(), suffix="decadal mean", transform=input$transform, metric=metric()) })
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   
