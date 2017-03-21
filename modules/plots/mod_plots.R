@@ -13,7 +13,7 @@ decModUI <- function(...){
   modUIprep(direction="x", trans=trans, stats=TRUE, ibox="dec", ...)
 }
 
-denMod <- function(input, output, session, data, metric){
+denMod <- function(input, output, session, data, metric, axis_scale){
   ns <- session$ns
   source("modules/plots/mod_plot_dist.R", local=TRUE)
   
@@ -25,7 +25,9 @@ denMod <- function(input, output, session, data, metric){
   source("modules/plots/mod_plot_general_observers.R", local=TRUE)
   
   yrs <- reactive({ range(d()$Year) })
-  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform, metric=metric()) })
+  axislab <- reactive({ 
+    primeAxis(stat(), variable(), transform=input$transform, metric=metric(), axis_scale=axis_scale())
+  })
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   preventPlot <- reactive({ nrow(d())==0 | d()$Var[1]!=variable() })
@@ -42,7 +44,7 @@ denMod <- function(input, output, session, data, metric){
   outputOptions(output, "plot2", suspendWhenHidden=FALSE)
 }
 
-tsMod <- function(input, output, session, data, metric){
+tsMod <- function(input, output, session, data, metric, axis_scale){
   ns <- session$ns
   source("modules/plots/mod_plot_ts.R", local=TRUE)
   
@@ -55,8 +57,12 @@ tsMod <- function(input, output, session, data, metric){
   source("modules/plots/mod_plot_ts_observers.R", local=TRUE)
   
   yrs <- reactive({ range(d()$Year) })
-  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform, metric=metric()) })
-  axislab2 <- reactive({ primeAxis(stat(), variable(), prefix="Cumulative total", transform=input$transform, metric=metric()) })
+  axislab <- reactive({
+    primeAxis(stat(), variable(), transform=input$transform, metric=metric(), axis_scale=axis_scale()) 
+  })
+  axislab2 <- reactive({ 
+    primeAxis(stat(), variable(), prefix="Cumulative total", transform=input$transform, metric=metric(), axis_scale=axis_scale()) 
+  })
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   
@@ -109,7 +115,7 @@ tsMod <- function(input, output, session, data, metric){
   #outputOptions(output, "Selected_obs", suspendWhenHidden=FALSE) # something wrong with reactive behavior here
 }
 
-decMod <- function(input, output, session, data, metric){
+decMod <- function(input, output, session, data, metric, axis_scale){
   ns <- session$ns
   source("modules/plots/mod_plot_dec.R", local=TRUE)
   
@@ -140,8 +146,12 @@ decMod <- function(input, output, session, data, metric){
   source("modules/plots/mod_plot_dec_observers.R", local=TRUE)
   
   yrs <- reactive({ range(d()$Year) })
-  axislab <- reactive({ primeAxis(stat(), variable(), transform=input$transform, metric=metric()) })
-  axislab2 <- reactive({ primeAxis(stat(), variable(), suffix="decadal mean", transform=input$transform, metric=metric()) })
+  axislab <- reactive({ 
+    primeAxis(stat(), variable(), transform=input$transform, metric=metric(), axis_scale=axis_scale()) 
+  })
+  axislab2 <- reactive({ 
+    primeAxis(stat(), variable(), suffix="decadal mean", transform=input$transform, metric=metric(), axis_scale=axis_scale())
+  })
   colorby <- reactive({ if(input$colorby=="") NULL else input$colorby })
   colorvec <- reactive({ if(is.null(colorby())) NULL else tolpal(length(unique(d()[[colorby()]]))) })
   
