@@ -15,7 +15,7 @@ decPlot <- function(type, limits){
 
   div_data <- function(x, y, stat, area.vars=c("Burn Area", "Fire Size", "Vegetated Area")){
     mutate_(x, Converted=lazyeval::interp(
-      ~ifelse(Var %in% area.vars, round(x/y, 3), x), x=as.name(stat))) %>%
+      ~ifelse(Var %in% area.vars, x/y, x), x=as.name(stat))) %>%
       select_(.dots=paste0("-", stat)) %>% rename_(.dots=setNames("Converted", stat))
   }
   
