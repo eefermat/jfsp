@@ -12,6 +12,12 @@ tsPlot <- function(type, limits){
   reg <- input$addReg
   regpos <- strsplit(tolower(input$regpos), " ")[[1]]
   
+  div_data <- function(x, y, stat, area.vars=c("Burn Area", "Fire Size", "Vegetated Area")){
+    mutate_(x, Converted=lazyeval::interp(
+      ~ifelse(Var %in% area.vars, round(x/y, 3), x), x=as.name(stat))) %>%
+      select_(.dots=paste0("-", stat)) %>% rename_(.dots=setNames("Converted", stat))
+  }
+  
   if(type=="cumulative"){
     d_keep <- group_by_(keep(), .dots=grp) %>%
       mutate_(Cumulative_total=lazyeval::interp(~cumsum(x), x=as.name(stat())))
@@ -22,12 +28,20 @@ tsPlot <- function(type, limits){
     ylab <- axislab()
   }
   
-  g <- ggplot(data=d(), aes_string(x, statname, colour=colorby()))
+  d1 <- d()
+  d_ex <- exclude()
+  if(axis_scale()!=1){
+    d1 <- div_data(d1, axis_scale(), statname)
+    d_keep <- div_data(d_keep, axis_scale(), statname)
+    d_ex <- div_data(d_ex, axis_scale(), statname)
+  }
+  
+  g <- ggplot(data=d1, aes_string(x, statname, colour=colorby()))
   if(input$addLines) g <- g + geom_line(data=d_keep, aes_string(group=plotInteraction()), alpha=alpha)
   if(type=="raw") ts_brush <- input$plot1_brush else ts_brush <- input$plot2_brush
   g2 <- g
   g2 <- g2 + geom_point(data=d_keep, size=3, alpha=alpha, position=pos)
-  if(type=="raw") g2 <- g2 + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=alpha/2)
+  if(type=="raw") g2 <- g2 + geom_point(data=d_ex, size=3, shape=21, fill=NA, color="black", alpha=alpha/2)
   if(reg){
     g2 <- if(is.null(colorby())) g2 + geom_smooth(data=d_keep, method='lm', se=FALSE, colour="black") else
       g2 + geom_smooth(data=d_keep, method='lm', se=FALSE)
@@ -38,13 +52,14 @@ tsPlot <- function(type, limits){
   if(!is.null(ts_brush)){
     d_keep2 <- brushedPoints(d_keep, ts_brush)
     if(nrow(d_keep2)!=0){
+      if(axis_scale()!=1) d_keep2 <- div_data(d_keep2, axis_scale(), statname)
       d_keep <- setdiff(d_keep, d_keep2)
     } else {
       d_keep2 <- d_keep
     }
     if(nrow(d_keep)!=0) g <- g + geom_point(data=d_keep, size=3, alpha=alpha/2, position=pos)
     g <- g + geom_point(data=d_keep2, size=3, alpha=alpha, position=pos)
-    if(type=="raw") g <- g + geom_point(data=exclude(), size=3, shape=21, fill=NA, color="black", alpha=alpha/2)
+    if(type=="raw") g <- g + geom_point(data=d_ex, size=3, shape=21, fill=NA, color="black", alpha=alpha/2)
     if(reg){
       g <- if(is.null(colorby())) g + geom_smooth(data=d_keep2, method='lm', se=FALSE, colour="black") else
         g + geom_smooth(data=d_keep2, method='lm', se=FALSE)
@@ -56,6 +71,6 @@ tsPlot <- function(type, limits){
     g <- g2
   }
   g <- g + coord_cartesian(xlim=limits[[1]], ylim=limits[[2]]) + theme_bw(base_size=14)
-  g <- .colorFacet(g, d(), colorby(), colorvec(), input$facetby, input$facet_scales)
+  g <- .colorFacet(g, d1, colorby(), colorvec(), input$facetby, input$facet_scales)
   g + plottheme + labs(y=ylab)
 }

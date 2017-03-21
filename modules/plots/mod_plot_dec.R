@@ -13,6 +13,12 @@ decPlot <- function(type, limits){
   }
   x <- "Decade"
 
+  div_data <- function(x, y, stat, area.vars=c("Burn Area", "Fire Size", "Vegetated Area")){
+    mutate_(x, Converted=lazyeval::interp(
+      ~ifelse(Var %in% area.vars, round(x/y, 3), x), x=as.name(stat))) %>%
+      select_(.dots=paste0("-", stat)) %>% rename_(.dots=setNames("Converted", stat))
+  }
+  
   d_source <- d_keep
   clrby <- colorby()
   pInteract <- plotInteraction()
@@ -22,6 +28,11 @@ decPlot <- function(type, limits){
   alpha <- input$alpha
   alphaHalf <- alpha/2
   barpos <- input$barpos
+  
+  if(axis_scale()!=1){
+    d_source <- div_data(d_source, axis_scale(), stat())
+    d_keep <- div_data(d_keep, axis_scale(), stat())
+  }
   
   g2 <- g <- ggplot(data=d_source, aes_string(x, stat(), colour=clrby, fill=clrby))
   
