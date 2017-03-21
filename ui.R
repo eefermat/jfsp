@@ -13,6 +13,7 @@ function(request){
       useToastr(),
       introjsUI(),
       #tags$style(HTML(".myijs { min-width: 800px; max-width: 800px; }")),
+      fluidRow(column(12, p("Select data, then explore.", style="text-align: justify; margin: 15px;"))),
       sidebarMenu(
         id="tabs",
         menuItem("Data", icon=icon("sliders"), tabName="data"),
@@ -30,7 +31,27 @@ function(request){
       conditionalPanel("output.Map != null",
       actionButton("help", "Take tour", style=action_btn_style, class="btn-flat action-button btn-block", icon=icon("question-circle")),
       #bookmarkButton(style=action_btn_style, class="btn-flat action-button btn-block")
-      actionButton("fake", "Bookmark", style=action_btn_style, class="btn-flat action-button btn-block", icon=icon("link")) # placeholder
+      actionButton("fake", "Bookmark", style=action_btn_style, class="btn-flat action-button btn-block", icon=icon("link")), # placeholder
+      fluidRow(
+        column(12,
+          em(p("[Note: Tour incomplete, under development. Bookmarking not yet available.]", 
+              style="text-align: justify; margin: 0px 15px 0px 15px;"))
+        )
+      )
+      ),
+      hr(style="margin: 15px;"),
+      fluidRow(
+        column(12, 
+          p("Global / semi-global options.", style="text-align: justify; margin: 0px 15px 0px 15px;"),
+          selectInput("metric", "Units", c("US", "Metric"), width="100%")
+        )
+      ),
+      fluidRow(
+        column(12,
+          selectInput("area_axis_scale", "Axis scale", c("x1", "x100", "x1000"), width="100%"),
+          em(p("Units apply to all data. Scale affects plot axes for burn area, fire size and vegetation cover area.", 
+               style="text-align: justify; margin: 0px 15px 0px 15px;"))
+        )
       )
     ),
     dashboardBody(
@@ -56,9 +77,8 @@ function(request){
               selectInput("veg", "Vegetation", choices=veg, selected="Black Spruce", multiple=TRUE, width="100%"),
               selectInput("gcms", "GCM", choices=gcms, selected=gcms, multiple=TRUE, width="100%"),
               fluidRow(
-                column(4, selectInput("rcps", "RCP", choices=rcps, selected=rcps, multiple=TRUE, width="100%")),
-                column(4, selectInput("stat", "Simulations", choices=stats, selected="Mean", width="100%")),
-                column(4, selectInput("metric", "Units", c("US", "Metric"), width="100"))
+                column(6, selectInput("rcps", "RCP", choices=rcps, selected=rcps, multiple=TRUE, width="100%")),
+                column(6, selectInput("stat", "Simulations", choices=stats, selected="Mean", width="100%"))
               ),
               sliderInput("yrs", "Years", min=period[1], max=period[2], value=c(2014, 2099), step=1, sep="", width="100%"),
               fluidRow(
