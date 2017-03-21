@@ -13,7 +13,7 @@ decModUI <- function(...){
   modUIprep(direction="x", trans=trans, stats=TRUE, ibox="dec", ...)
 }
 
-denMod <- function(input, output, session, data){
+denMod <- function(input, output, session, data, metric){
   ns <- session$ns
   source("modules/plots/mod_plot_dist.R", local=TRUE)
   
@@ -42,7 +42,7 @@ denMod <- function(input, output, session, data){
   outputOptions(output, "plot2", suspendWhenHidden=FALSE)
 }
 
-tsMod <- function(input, output, session, data){
+tsMod <- function(input, output, session, data, metric){
   ns <- session$ns
   source("modules/plots/mod_plot_ts.R", local=TRUE)
   
@@ -109,7 +109,7 @@ tsMod <- function(input, output, session, data){
   #outputOptions(output, "Selected_obs", suspendWhenHidden=FALSE) # something wrong with reactive behavior here
 }
 
-decMod <- function(input, output, session, data){
+decMod <- function(input, output, session, data, metric){
   ns <- session$ns
   source("modules/plots/mod_plot_dec.R", local=TRUE)
   

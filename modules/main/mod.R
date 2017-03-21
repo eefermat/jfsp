@@ -24,9 +24,9 @@ mainModUI <- function(id, tab_name){
   )
 }
 
-mainMod <- function(input, output, session, data){
+mainMod <- function(input, output, session, data, metric){
   ns <- session$ns
-  callModule(tsMod, "mod_ts", data=data)
-  callModule(denMod, "mod_den", data=data)
-  callModule(decMod, "mod_dec", data=data)
+  callModule(tsMod, "mod_ts", data=data, metric=metric)
+  callModule(denMod, "mod_den", data=data, metric=metric)
+  callModule(decMod, "mod_dec", data=data, metric=metric)
 }
