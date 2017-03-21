@@ -36,6 +36,8 @@ shinyServer(function(input, output, session) {
   output$Map <- renderLeaflet(mapSelect())
   outputOptions(output ,"Map", suspendWhenHidden=FALSE)
   
+  metric <- reactive(input$metric=="Metric")
+  
   d1 <- reactive({withProgress({
     i <- list(input$rcps, input$gcms, input$regions, input$veg, input$yrs, input$stat)
     dots <- c("RCP", "Model", "Region", "Var", "Vegetation", "Year", i[[6]])
@@ -49,8 +51,12 @@ shinyServer(function(input, output, session) {
         select_(.dots=dots)
       
       x <- getSubset(d)
-      #Sys.sleep(1)
       if(i[[5]][1] < 2014) x <- bind_rows(getSubset(h), x)
+    }
+    if(nrow(x) > 0 && !metric()){
+      x <- mutate_(x, Converted=lazyeval::interp(
+        ~ifelse(Var %in% c("Burn Area", "Fire Size", "Vegetated Area"), as.integer(round(247.105*x)), x), 
+        x=as.name(i[[6]]))) %>% select_(i[[6]]) %>% rename_(.dots=setNames("Converted", i[[6]]))
     }
     x %>% split(.$Var) %>% map(~droplevels(.x))
     }, message="Subsetting data...", value=1)
@@ -89,9 +95,9 @@ shinyServer(function(input, output, session) {
   d_v <- reactive({ d1()[["Vegetated Area"]] })
   d_a <- reactive({ d1()[["Vegetation Age"]] })
   
-  callModule(mainMod, mods[1], data=d_ba)
-  callModule(mainMod, mods[2], data=d_fc)
-  callModule(mainMod, mods[3], data=d_fs)
-  callModule(mainMod, mods[4], data=d_v)
-  callModule(mainMod, mods[5], data=d_a)
+  callModule(mainMod, mods[1], data=d_ba, metric=metric)
+  callModule(mainMod, mods[2], data=d_fc, metric=metric)
+  callModule(mainMod, mods[3], data=d_fs, metric=metric)
+  callModule(mainMod, mods[4], data=d_v, metric=metric)
+  callModule(mainMod, mods[5], data=d_a, metric=metric)
 })

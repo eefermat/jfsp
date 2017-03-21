@@ -5,9 +5,8 @@ function(request){
     dashboardHeader(
       title="JFSP Alfresco",
       tags$li(class="dropdown",
-              tags$a(href="http://snap.uaf.edu", target="_blank",
-                     tags$img(src="SNAP_acronym_100px.png", width="100%", alt="SNAP"), style="padding: 10px; margin: 0px;")
-      )
+        tags$a(href="http://snap.uaf.edu", target="_blank",
+          tags$img(src="SNAP_acronym_100px.png", width="100%", alt="SNAP"), style="padding: 10px; margin: 0px;"))
       #tags$head(includeScript("ga-nwtapp.js"), includeScript("ga-allapps.js")),
     ),
     dashboardSidebar(
@@ -57,13 +56,14 @@ function(request){
               selectInput("veg", "Vegetation", choices=veg, selected="Black Spruce", multiple=TRUE, width="100%"),
               selectInput("gcms", "GCM", choices=gcms, selected=gcms, multiple=TRUE, width="100%"),
               fluidRow(
-                column(6, selectInput("rcps", "RCP", choices=rcps, selected=rcps, multiple=TRUE, width="100%")),
-                column(6, selectInput("stat", "Summarize sims by", choices=stats, selected="Mean", width="100%"))
+                column(4, selectInput("rcps", "RCP", choices=rcps, selected=rcps, multiple=TRUE, width="100%")),
+                column(4, selectInput("stat", "Simulations", choices=stats, selected="Mean", width="100%")),
+                column(4, selectInput("metric", "Units", c("US", "Metric"), width="100"))
               ),
               sliderInput("yrs", "Years", min=period[1], max=period[2], value=c(2014, 2099), step=1, sep="", width="100%"),
               fluidRow(
-                column(6, actionButton("btn_staticmap", "Detailed FMZ map", class="btn-block", icon("globe"))),
-                column(6,
+                column(4, actionButton("btn_staticmap", "Detailed map", class="btn-block", icon("globe"))),
+                column(8,
                   conditionalPanel("output.Map != null",
                     checkboxInput("flammable", "Show flammable region", TRUE, width="100%"))
                 )
