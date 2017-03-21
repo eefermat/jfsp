@@ -142,7 +142,7 @@ interact <- function(x){
   g
 }
 
-primeAxis <- function(stat, variable, prefix=NULL, suffix=NULL, transform="", metric=TRUE){
+primeAxis <- function(stat, variable, prefix=NULL, suffix=NULL, transform="", metric=TRUE, axis_scale=1){
   v <- tolower(variable)
   if(v=="fire count") v <- "number of fires"
   if(v=="vegetated area") v <- "cover area"
@@ -159,12 +159,22 @@ primeAxis <- function(stat, variable, prefix=NULL, suffix=NULL, transform="", me
   if(!is.null(suffix)) x <- paste(x, suffix)
   if(v=="number of fires" & transform != "") x <- tolower(x)
   unit <- if(metric) "km" else "acres"
-  switch(v,
-    "burn area"=bquote(.(x)~(.(transform)~.(unit)^2)),
-    "number of fires"=bquote(.(transform)~.(x)),
-    "fire size"=bquote(.(x)~(.(transform)~.(unit)^2)), 
-    "cover area"=bquote(.(x)~(.(transform)~.(unit)^2)), 
-    "stand age"=bquote(.(x)~(.(transform)~years)))
+  if(axis_scale != 1) unit <- paste(axis_scale, unit)
+  if(transform==""){
+    switch(v,
+      "burn area"=bquote(.(x)~(.(unit)^2)),
+      "number of fires"=bquote(.(x)),
+      "fire size"=bquote(.(x)~(.(unit)^2)), 
+      "cover area"=bquote(.(x)~(.(unit)^2)), 
+      "stand age"=bquote(.(x)~(years)))
+  } else {
+    switch(v,
+      "burn area"=bquote(.(x)~(.(transform)~.(unit)^2)),
+      "number of fires"=bquote(.(transform)~.(x)),
+      "fire size"=bquote(.(x)~(.(transform)~.(unit)^2)), 
+      "cover area"=bquote(.(x)~(.(transform)~.(unit)^2)), 
+      "stand age"=bquote(.(x)~(.(transform)~years)))
+  }
 }
 
 mouseLog <- function(x, ns, width){
