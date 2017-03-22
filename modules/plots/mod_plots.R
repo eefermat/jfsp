@@ -119,6 +119,13 @@ decMod <- function(input, output, session, data, metric, axis_scale){
   ns <- session$ns
   source("modules/plots/mod_plot_dec.R", local=TRUE)
   
+  kilo_mega <- function(x){
+    if(abs(x) < 1e4) paste0(x) else 
+      if(abs(x) < 1e5) paste0(round(x/1000, 1), "K") else 
+        if(abs(x) < 1e6) paste0(round(x/1000), "K") else
+          paste0(round(x/1e6, 2), "M") 
+  }
+  
   variable <- reactive({ as.character(data()$Var[1]) })
   stat <- reactive({ tail(names(data()), 1) })
   d <- reactive({ plotDataPrep(data(), input$transform, input$pooled_vars, input$colorby, input$facetby, stat()) })
@@ -183,10 +190,10 @@ decMod <- function(input, output, session, data, metric, axis_scale){
       Pct25_=paste0("stats::quantile(", stat(), ", prob=0.25)"),
       Pct75_=paste0("stats::quantile(", stat(), ", prob=0.75)"),
       SD_=paste0("stats::sd(", stat(), ")")
-    )) %>% round
-    
+    )) %>% round %>% unlist %>% map_chr(~kilo_mega(.x))
+
     clrs <- c("yellow", "orange", "purple", "red", "blue", "navy")
-    statval <- c(x$Mean_, x$Min_, x$Max_, x$Median_, paste(x$Pct25_, "-", x$Pct75_), x$SD_)
+    statval <- c(x[1:4], paste(x[5], "-", x[6]), x[7])
     statlab <- list(
       c("Mean", dec),
       c("Min", dec),
@@ -195,7 +202,7 @@ decMod <- function(input, output, session, data, metric, axis_scale){
       c("IQR", dec),
       c("Std Dev", dec)
     )
-    val <- map2(statval, 75, ~pTextSize(.x, .y))
+    val <- map2(statval, c(rep(75, 4), 50, 75), ~pTextSize(.x, .y))
     text <- map2(statlab, rep(150, 6), ~pTextSize(.x, .y, margin=0))
     y <- list(
       mean=valueBox(val[[1]], text[[1]], icon=icon(list(src="stat_icon_normal_mean_white.png", width="90px"), lib="local"), color=clrs[1], width=NULL),
@@ -243,14 +250,14 @@ decMod <- function(input, output, session, data, metric, axis_scale){
     
     clrs <- c("yellow", "orange", "purple", "red", "blue", "navy")
     statval <- list(
-      mn=round(x[[stat()]][idx.mn]),
-      mx=round(x[[stat()]][idx.mx]),
-      dn=if(is.na(idx.dn[1])) NA else round(diff(x[[stat()]])[idx.dn[1]]),
-      up=if(is.na(idx.up[1])) NA else round(diff(x[[stat()]])[idx.up[1]]),
-      totdif=tot2,
+      mn=kilo_mega(round(x[[stat()]][idx.mn])),
+      mx=kilo_mega(round(x[[stat()]][idx.mx])),
+      dn=if(is.na(idx.dn[1])) NA else kilo_mega(round(diff(x[[stat()]])[idx.dn[1]])),
+      up=if(is.na(idx.up[1])) NA else kilo_mega(round(diff(x[[stat()]])[idx.up[1]])),
+      totdif=kilo_mega(tot2),
       totpct=pct
     )
-    
+
     src.dnup <- c("stat_icon_bar_deltaNeg_white.png", "stat_icon_bar_deltaPos_white.png")
     if(!is.na(statval$dn[1]) && statval$dn > 0) src.dnup[1] <- src.dnup[2]
     if(!is.na(statval$up[1]) && statval$up < 0) src.dnup[2] <- src.dnup[1]
