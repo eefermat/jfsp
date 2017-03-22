@@ -160,20 +160,39 @@ primeAxis <- function(stat, variable, prefix=NULL, suffix=NULL, transform="", me
   if(v=="number of fires" & transform != "") x <- tolower(x)
   unit <- if(metric) "km" else "acres"
   if(axis_scale != 1) unit <- paste(axis_scale, unit)
-  if(transform==""){
-    switch(v,
-      "burn area"=bquote(.(x)~(.(unit)^2)),
-      "number of fires"=bquote(.(x)),
-      "fire size"=bquote(.(x)~(.(unit)^2)), 
-      "cover area"=bquote(.(x)~(.(unit)^2)), 
-      "stand age"=bquote(.(x)~(years)))
+  
+  if(metric){
+    if(transform==""){
+      switch(v,
+             "burn area"=bquote(.(x)~(.(unit)^2)),
+             "number of fires"=bquote(.(x)),
+             "fire size"=bquote(.(x)~(.(unit)^2)), 
+             "cover area"=bquote(.(x)~(.(unit)^2)), 
+             "stand age"=bquote(.(x)~(years)))
+    } else {
+      switch(v,
+             "burn area"=bquote(.(x)~(.(transform)~.(unit)^2)),
+             "number of fires"=bquote(.(transform)~.(x)),
+             "fire size"=bquote(.(x)~(.(transform)~.(unit)^2)), 
+             "cover area"=bquote(.(x)~(.(transform)~.(unit)^2)), 
+             "stand age"=bquote(.(x)~(.(transform)~years)))
+    }
   } else {
-    switch(v,
-      "burn area"=bquote(.(x)~(.(transform)~.(unit)^2)),
-      "number of fires"=bquote(.(transform)~.(x)),
-      "fire size"=bquote(.(x)~(.(transform)~.(unit)^2)), 
-      "cover area"=bquote(.(x)~(.(transform)~.(unit)^2)), 
-      "stand age"=bquote(.(x)~(.(transform)~years)))
+    if(transform==""){
+      switch(v,
+        "burn area"=bquote(.(x)~(.(unit))),
+        "number of fires"=bquote(.(x)),
+        "fire size"=bquote(.(x)~(.(unit))), 
+        "cover area"=bquote(.(x)~(.(unit))), 
+        "stand age"=bquote(.(x)~(years)))
+    } else {
+      switch(v,
+        "burn area"=bquote(.(x)~(.(transform)~.(unit))),
+        "number of fires"=bquote(.(transform)~.(x)),
+        "fire size"=bquote(.(x)~(.(transform)~.(unit))), 
+        "cover area"=bquote(.(x)~(.(transform)~.(unit))), 
+        "stand age"=bquote(.(x)~(.(transform)~years)))
+    }
   }
 }
 
