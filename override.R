@@ -1,3 +1,6 @@
+# These functions override functions in the shiny and shinydashboard packages
+# to provide the ability to display image file icons in value boxes.
+
 # override shinydashboard function
 valueBox <- function (value, subtitle, icon = NULL, color = "aqua", width = 4, href = NULL){
   shinydashboard:::validateColor(color)
