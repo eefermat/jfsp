@@ -24,12 +24,12 @@ bsCollapse(id="faq",
       that emit large quantities of green house gases. 
       RCP 6.0 lies somewhere in between."), 
       style="info"),
-  bsCollapsePanel("What does \"suumarize sims by\" refer to?", 
+  bsCollapsePanel("What do \"simulations\" refer to in the data selection area?", 
     p("In order to accommodate the uncertainty associated with ignitions in a given year, 
       ALFRESCO simulates several dozen different possible fire seasons for each year. 
       In this context, each year in the historical record is just one single possible outcome that is consistent with the weather for that summer. 
       Uncertainty in the out put form this tool comes from several different places. 
-      The ability to summarize across simulations using the mean, standard deviation (SD), min or max, 
+      The ability to summarize across simulations using the mean, minimum or maximum, 
       allows us to explore the uncertainty that is specifically associated with the simulation of fire activity in ALFRESCO."),
     style="info")
 )
