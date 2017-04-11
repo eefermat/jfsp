@@ -34,14 +34,21 @@ denMod <- function(input, output, session, data, metric, axis_scale){
   plotHeight <- reactive({ if(preventPlot()) 0 else 400 })
   plotInteraction <- reactive({ interact(names(d())) })
   
-  output$plot1 <- renderPlot({ distPlot("density", list(rv_plots$x1, rv_plots$y1)) }, height=function() plotHeight())
-  output$plot2 <- renderPlot({ distPlot("histogram", list(rv_plots$x2, rv_plots$y2)) }, height=function() plotHeight())
+  plot1 <- reactive({ distPlot("density", list(rv_plots$x1, rv_plots$y1)) })
+  plot2 <- reactive({ distPlot("histogram", list(rv_plots$x2, rv_plots$y2)) })
+  output$plot1 <- renderPlot({ plot1() }, height=function() plotHeight())
+  output$plot2 <- renderPlot({ plot2() }, height=function() plotHeight())
   
   output$info1 <- renderText({ mouseInfo(input$plot1_clk, input$plot1_dblclk, input$plot1_hov, input$plot1_brush) })
   output$info2 <- renderText({ mouseInfo(input$plot2_clk, input$plot2_dblclk, input$plot2_hov, input$plot2_brush) })
   
   outputOptions(output, "plot1", suspendWhenHidden=FALSE)
   outputOptions(output, "plot2", suspendWhenHidden=FALSE)
+  
+  objlist <- reactive({
+    list(p=plot1())
+  })
+  return(objlist)
 }
 
 tsMod <- function(input, output, session, data, metric, axis_scale){
@@ -81,20 +88,25 @@ tsMod <- function(input, output, session, data, metric, axis_scale){
   plotHeight <- reactive({ if(preventPlot()) 0 else 400 })
   plotInteraction <- reactive({ interact(names(d())) })
   
-  output$plot1 <- renderPlot({ tsPlot("raw", list(rv_plots$x1, rv_plots$y1)) }, height=function() plotHeight())
-  output$plot2 <- renderPlot({ tsPlot("cumulative", list(rv_plots$x2, rv_plots$y2)) }, height=function() plotHeight())
+  plot1 <- reactive({ tsPlot("raw", list(rv_plots$x1, rv_plots$y1)) })
+  plot2 <- reactive({ tsPlot("cumulative", list(rv_plots$x2, rv_plots$y2)) })
+  output$plot1 <- renderPlot({ plot1() }, height=function() plotHeight())
+  output$plot2 <- renderPlot({ plot2() }, height=function() plotHeight())
   
   output$info1 <- renderText({ mouseInfo(input$plot1_clk, input$plot1_dblclk, input$plot1_hov, input$plot1_brush) })
   output$info2 <- renderText({ mouseInfo(input$plot2_clk, input$plot2_dblclk, input$plot2_hov, input$plot2_brush) })
   
+  brushed <- reactive({
+    x <- input$plot1_brush
+    x <- if(is.null(x)) slice(d(), 0) else brushedPoints(d(), x, allRows=TRUE)
+    if(nrow(x)==0 || nrow(filter(x, selected_))==0) x <- NULL
+    x
+  })
+  
   output$Selected_obs <- DT::renderDataTable({
     # ignore input$plot1_click for table updates; click obs-toggling removes all selection
-    if(is.null(input$plot1_brush)){
-      x <- slice(d(), 0)
-    } else {
-      x <- brushedPoints(d(), input$plot1_brush, allRows=TRUE)
-    }
-    if(preventPlot() || nrow(x)==0 || nrow(filter(x, selected_))==0) return()
+    x <- brushed()
+    if(preventPlot() || is.null(brushed())) return()
     x <- mutate(x, included_=rv_plots$keeprows) %>% filter(selected_) %>% mutate(selected_=NULL)
     x <- mutate(x, included_=paste0(x[[input$colorby]], "_", x$included_))
     clrs <- tableRowColors(x, input$colorby, colorvec(), "35")
@@ -113,6 +125,16 @@ tsMod <- function(input, output, session, data, metric, axis_scale){
   outputOptions(output, "plot1", suspendWhenHidden=FALSE)
   outputOptions(output, "plot2", suspendWhenHidden=FALSE)
   #outputOptions(output, "Selected_obs", suspendWhenHidden=FALSE) # something wrong with reactive behavior here
+  
+  objlist <- reactive({
+    if(is.null(brushed())){
+      x <- mutate(keep(), selected_=TRUE)
+    } else {
+      x <- suppressMessages(left_join(keep(), brushed())) %>% filter(selected_)
+    }
+    list(p=plot1(), d=x, x=x[[stat()]], n_sel_yrs=length(unique(x$Year)))
+  })
+  return(objlist)
 }
 
 decMod <- function(input, output, session, data, metric, axis_scale){
@@ -166,8 +188,10 @@ decMod <- function(input, output, session, data, metric, axis_scale){
   plotHeight <- reactive({ if(preventPlot()) 0 else 400 })
   plotInteraction <- reactive({ interact(names(d())) })
   
-  output$plot1 <- renderPlot({ decPlot("boxplot", list(rv_plots$xdec1, rv_plots$ydec1)) }, height=function() plotHeight())
-  output$plot2 <- renderPlot({ decPlot("barplot", list(rv_plots$xdec2, rv_plots$ydec2)) }, height=function() plotHeight())
+  plot1 <- reactive({ decPlot("boxplot", list(rv_plots$xdec1, rv_plots$ydec1)) })
+  plot2 <- reactive({ decPlot("barplot", list(rv_plots$xdec2, rv_plots$ydec2)) })
+  output$plot1 <- renderPlot({ plot1() }, height=function() plotHeight())
+  output$plot2 <- renderPlot({ plot2() }, height=function() plotHeight())
   
   output$info1 <- renderText({ mouseInfo(input$plot1_clk, input$plot1_dblclk, input$plot1_hov, input$plot1_brush) })
   output$info2 <- renderText({ mouseInfo(input$plot2_clk, input$plot2_dblclk, input$plot2_hov, input$plot2_brush) })
@@ -297,4 +321,9 @@ decMod <- function(input, output, session, data, metric, axis_scale){
   outputOptions(output, "plot2", suspendWhenHidden=FALSE)
   outputOptions(output, "statBoxes1", suspendWhenHidden=FALSE)
   outputOptions(output, "statBoxes2", suspendWhenHidden=FALSE)
+  
+  objlist <- reactive({
+    list(p=plot1())
+  })
+  return(objlist)
 }
