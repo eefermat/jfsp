@@ -38,28 +38,32 @@ shinyServer(function(input, output, session) {
   
   metric <- reactive({ input$metric=="Metric" })
   axis_scale <- reactive({ as.numeric(substring(input$area_axis_scale, 2)) })
+  i <- reactive({ list(rcps=input$rcps, gcms=input$gcms, reg=input$regions,
+                       veg=input$veg, yrs=input$yrs, stat=input$stat,
+                       reg.names=names(regions)[match(input$regions, regions)]) 
+  })
+  noData <- reactive({ any(sapply(i(), is.null)) })
   
   d1 <- reactive({withProgress({
-    i <- list(input$rcps, input$gcms, input$regions, input$veg, input$yrs, input$stat)
-    dots <- c("RCP", "Model", "Region", "Var", "Vegetation", "Year", i[[6]])
-    if(any(sapply(i, is.null))){
+    dots <- c("RCP", "Model", "Region", "Var", "Vegetation", "Year", i()[[6]])
+    if(noData()){
       x <- slice(d, 0) 
     } else {
       getSubset <- function(x) filter(x, 
-        RCP %in% c("Historical", i[[1]]) & Model %in% c("CRU 3.2", i[[2]]) &
-          Region %in% i[[3]] & Vegetation %in% i[[4]] &
-          Year >= i[[5]][1] & Year <= i[[5]][2]) %>%
+        RCP %in% c("Historical", i()[[1]]) & Model %in% c("CRU 3.2", i()[[2]]) &
+          Region %in% i()[[3]] & Vegetation %in% i()[[4]] &
+          Year >= i()[[5]][1] & Year <= i()[[5]][2]) %>%
         select_(.dots=dots)
       
       x <- getSubset(d)
-      if(i[[5]][1] < 2014) x <- bind_rows(getSubset(h), x)
+      if(i()[[5]][1] < 2014) x <- bind_rows(getSubset(h), x)
     }
     
     if(nrow(x) > 0 && !metric()){
       area.vars <- c("Burn Area", "Fire Size", "Vegetated Area")
       x <- mutate_(x, Converted=lazyeval::interp(
-        ~ifelse(Var %in% area.vars, as.integer(round(247.105*x)), x), x=as.name(i[[6]]))) %>%
-        select_(.dots=paste0("-", i[[6]])) %>% rename_(.dots=setNames("Converted", i[[6]]))
+        ~ifelse(Var %in% area.vars, as.integer(round(247.105*x)), x), x=as.name(i()[[6]]))) %>%
+        select_(.dots=paste0("-", i()[[6]])) %>% rename_(.dots=setNames("Converted", i()[[6]]))
     }
     x %>% split(.$Var) %>% map(~droplevels(.x))
     }, message="Subsetting data...", value=1)
@@ -98,9 +102,29 @@ shinyServer(function(input, output, session) {
   d_v <- reactive({ d1()[["Vegetated Area"]] })
   d_a <- reactive({ d1()[["Vegetation Age"]] })
   
-  callModule(mainMod, mods[1], data=d_ba, metric=metric, axis_scale=axis_scale)
-  callModule(mainMod, mods[2], data=d_fc, metric=metric, axis_scale=axis_scale)
-  callModule(mainMod, mods[3], data=d_fs, metric=metric, axis_scale=axis_scale)
-  callModule(mainMod, mods[4], data=d_v, metric=metric, axis_scale=axis_scale)
-  callModule(mainMod, mods[5], data=d_a, metric=metric, axis_scale=axis_scale)
+  report_ba <- callModule(mainMod, mods[1], data=d_ba, inp=i, metric=metric, axis_scale=axis_scale)
+  report_fc <- callModule(mainMod, mods[2], data=d_fc, inp=i, metric=metric, axis_scale=axis_scale)
+  report_fs <- callModule(mainMod, mods[3], data=d_fs, inp=i, metric=metric, axis_scale=axis_scale)
+  report_v <- callModule(mainMod, mods[4], data=d_v, inp=i, metric=metric, axis_scale=axis_scale)
+  report_a <- callModule(mainMod, mods[5], data=d_a, inp=i, metric=metric, axis_scale=axis_scale)
+  
+  output$download_report <- renderUI({
+    if(!input$tabs %in% tab_ids || noData()) return()
+    allow_report <- switch(input$tabs,
+      "burnarea"=report_ba(), "firefreq"=report_fc(), "firesize"=report_fs(),
+      "vegarea"=report_v(), "vegage"=report_a())
+    if(!allow_report) return()
+    btn <- paste0("mod_", input$tabs, "-report")
+    tip <- "Download a customized fact sheet based on currently selected data and displayed plots. See the FAQ section under the Information tab above for details."
+    
+    tagList(
+      hr(style="margin: 15px;"),
+      fluidRow(
+        column(12,
+          p("Download custom reports.", style="text-align: justify; margin: 0px 15px 0px 15px;"),
+          tipify(downloadButton(btn, "Fact sheet", style=action_btn_style), tip, placement="right", options=list(container="body"))
+        )
+      )
+    )
+  })
 })
