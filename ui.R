@@ -29,30 +29,24 @@ function(request){
         menuItem("Information", icon=icon("info-circle"), tabName="info")
       ),
       conditionalPanel("output.Map != null",
-      actionButton("help", "Take tour", style=action_btn_style, class="btn-flat action-button btn-block", icon=icon("question-circle")),
-      #bookmarkButton(style=action_btn_style, class="btn-flat action-button btn-block")
-      actionButton("fake", "Bookmark", style=action_btn_style, class="btn-flat action-button btn-block", icon=icon("link")), # placeholder
-      fluidRow(
-        column(12,
-          em(p("[Note: Tour incomplete, under development. Bookmarking not yet available.]", 
-              style="text-align: justify; margin: 0px 15px 0px 15px;"))
-        )
-      )
+        actionButton("help", "Take tour", style=action_btn_style, icon=icon("question-circle")),
+        #bookmarkButton(style=action_btn_style)
+        actionButton("fake", "Bookmark", style=action_btn_style, icon=icon("link")), # placeholder
+        bsTooltip("help", "Note: Tour incomplete, under development.", placement="right", options=list(container="body")),
+        bsTooltip("fake", "Note: Server-side bookmarking not yet available.", placement="right", options=list(container="body"))
       ),
       hr(style="margin: 15px;"),
       fluidRow(
         column(12, 
           p("Global / semi-global options.", style="text-align: justify; margin: 0px 15px 0px 15px;"),
-          selectInput("metric", "Units", c("US", "Metric"), width="100%")
+          selectInput("metric", "Units", c("US", "Metric"), width="100%"),
+          selectInput("area_axis_scale", "Axis scale", c("x1", "x100", "x1000"), width="100%")
         )
       ),
-      fluidRow(
-        column(12,
-          selectInput("area_axis_scale", "Axis scale", c("x1", "x100", "x1000"), width="100%"),
-          em(p("Units apply to all data. Scale affects plot axes for burn area, fire size and vegetation cover area.", 
-               style="text-align: justify; margin: 0px 15px 0px 15px;"))
-        )
-      )
+      bsTooltip("metric", "Units apply to all data.", placement="right", options=list(container="body")),
+      bsTooltip("area_axis_scale", "Scale affects plot axes for burn area, fire size and vegetation cover area.",
+        placement="right", options=list(container="body")),
+      uiOutput("download_report")
     ),
     dashboardBody(
       includeCSS("www/styles.css"),
