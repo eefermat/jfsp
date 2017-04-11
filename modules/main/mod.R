@@ -24,9 +24,12 @@ mainModUI <- function(id, tab_name){
   )
 }
 
-mainMod <- function(input, output, session, data, metric, axis_scale){
+mainMod <- function(input, output, session, data, inp, metric, axis_scale){
   ns <- session$ns
-  callModule(tsMod, "mod_ts", data=data, metric=metric, axis_scale=axis_scale)
-  callModule(denMod, "mod_den", data=data, metric=metric, axis_scale=axis_scale)
-  callModule(decMod, "mod_dec", data=data, metric=metric, axis_scale=axis_scale)
+  ts_list <- callModule(tsMod, "mod_ts", data=data, metric=metric, axis_scale=axis_scale)
+  den_list <- callModule(denMod, "mod_den", data=data, metric=metric, axis_scale=axis_scale)
+  dec_list <- callModule(decMod, "mod_dec", data=data, metric=metric, axis_scale=axis_scale)
+  source("modules/main/mod_report.R", local=TRUE)
+  allow_report <- reactive({ ts_list()$n_sel_yrs >= 30 })
+  return(allow_report)
 }
