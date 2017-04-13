@@ -67,7 +67,10 @@ function(request){
               )
             ),
             column(6,
-              selectInput("regions", "Fire Mgmt Zones", choices=regions, selected="", multiple=TRUE, width="100%"),
+              fluidRow(
+                column(6, selectInput("mapset", "Load a map layer", choices=mapsets, selected=mapsets[1], width="100%")),
+                column(6, uiOutput("mapset_regions"))
+              ),
               selectInput("veg", "Vegetation", choices=veg, selected="Black Spruce", multiple=TRUE, width="100%"),
               selectInput("gcms", "GCM", choices=gcms, selected=gcms, multiple=TRUE, width="100%"),
               fluidRow(
