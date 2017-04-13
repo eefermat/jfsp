@@ -5,6 +5,42 @@ mods <- paste0("mod_", tab_ids)
 
 shinyServer(function(input, output, session) {
   
+  mapset_workspace <- reactive({
+    if(is.null(input$mapset) || input$mapset=="Alaska") NULL else "appData/mapData.RData"
+  })
+  
+  rv <- reactiveValues(d=d, h=h, regions=regions, shp=shp)
+  
+  load_file <- function(file){
+    load(file, envir=environment())
+    rv[["d"]] <- d
+    rv[["h"]] <- h
+    rv[["regions"]] <- regions
+    rv[["shp"]] <- shp
+  }
+  
+  updateData <- reactive({ 
+    if(is.null(mapset_workspace())){
+      rv[["d"]] <- d
+      rv[["h"]] <- h
+      rv[["regions"]] <- regions
+      rv[["shp"]] <- shp
+    } else {
+      load_file(mapset_workspace())
+    }
+  })
+  observe({ updateData() })
+  
+  output$mapset_regions <- renderUI({
+    reg <- rv$regions
+    mult <- FALSE
+    if(input$mapset!="Alaska"){
+      reg <- c("", reg)
+      mult <- TRUE
+    }
+    selectInput("regions", input$mapset, choices=reg, selected=reg[1], multiple=mult, width="100%")
+  })
+  
   source("observers.R", local=TRUE) # map and region selectInput observers
   source("tour.R", local=TRUE) # introjs tour
   
@@ -15,19 +51,21 @@ shinyServer(function(input, output, session) {
     progress <- shiny::Progress$new()
     on.exit(progress$close())
     progress$set(message="Generating zone map", value=0)
-    z <- fmz$REGION
+    ak <- input$mapset=="AK"
+    z <- if(ak) "Alaska" else rv$shp$REGION
     n <- 1 + length(z)
     x <- leaflet() %>% addTiles() %>% setView(lon, lat, 4) %>%
       addPolygons(data=flam, stroke=TRUE, fillOpacity=0.2, weight=1, color="red", group="flammable")
     progress$inc(1/n, detail="Basemap built")
-    #Sys.sleep(1)
     # Add background polygon region outlines after map is created
-    for(i in seq_along(z)){
-      x <- x %>% addPolygons(data=subset(fmz, REGION==z[i]), stroke=TRUE, fillOpacity=0, weight=1,
-        color="black", group="not_selected", layerId=z[i], label=names(regions)[i],
-        highlightOptions=highlightOptions(opacity=1, weight=2, fillOpacity=0, 
-          bringToFront=FALSE, sendToBack=FALSE))
-      progress$inc((i+1)/n, detail=paste("Adding polygon", i))
+    if(!ak){
+      for(i in seq_along(z)){
+        x <- x %>% addPolygons(data=subset(rv$shp, REGION==z[i]), stroke=TRUE, fillOpacity=0, weight=1,
+          color="black", group="not_selected", layerId=z[i], label=names(rv$regions)[i],
+          highlightOptions=highlightOptions(opacity=1, weight=2, fillOpacity=0, 
+            bringToFront=FALSE, sendToBack=FALSE))
+        progress$inc((i+1)/n, detail=paste("Adding polygon", i))
+      }
     }
     print(proc.time() - ptm)
     x
@@ -40,9 +78,9 @@ shinyServer(function(input, output, session) {
   axis_scale <- reactive({ as.numeric(substring(input$area_axis_scale, 2)) })
   i <- reactive({ list(rcps=input$rcps, gcms=input$gcms, reg=input$regions,
                        veg=input$veg, yrs=input$yrs, stat=input$stat,
-                       reg.names=names(regions)[match(input$regions, regions)]) 
+                       reg.names=names(rv$regions)[match(input$regions, rv$regions)]) 
   })
-  noData <- reactive({ any(sapply(i(), is.null)) })
+  noData <- reactive({ any(sapply(i(), is.null)) || is.null(rv$d) })
   
   d1 <- reactive({withProgress({
     dots <- c("RCP", "Model", "Region", "Var", "Vegetation", "Year", i()[[6]])
@@ -55,8 +93,8 @@ shinyServer(function(input, output, session) {
           Year >= i()[[5]][1] & Year <= i()[[5]][2]) %>%
         select_(.dots=dots)
       
-      x <- getSubset(d)
-      if(i()[[5]][1] < 2014) x <- bind_rows(getSubset(h), x)
+      x <- getSubset(rv$d)
+      if(i()[[5]][1] < 2014) x <- bind_rows(getSubset(rv$h), x)
     }
     
     if(nrow(x) > 0 && !metric()){
