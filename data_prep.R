@@ -1,10 +1,13 @@
 library(dplyr)
 library(purrr)
+library(aws.s3)
 
 # setup
+source("aws_key.R")
+bkt <- "mleonawicz"
 useAK <- TRUE # set to false for non-statewide AK mapsets
 
-mapsets <- c("Alaska", "Fire management zones")
+mapsets <- c("Alaska"="AK", "Fire management zones"="FMZ")
 gbm <- "5m" #c("3m", "5m")
 rcp <- c("Historical", "RCP 4.5", "RCP 6.0", "RCP 8.5")
 models <- c("CRU 3.2", "NCAR-CCSM4", "GFDL-CM3", "GISS-E2-R", "IPSL-CM5A-LR", "MRI-CGCM3")
@@ -82,5 +85,7 @@ if(useAK){
   save(list=objs, file="appData/appData.RData") # general data
 } else {
   objs <- c('d', 'h', 'regions', 'shp')
-  save(list=objs, file="appData/mapData.RData") # may layer-specific data
+  file <- "appData/mapData.RData"
+  save(list=objs, file=file) # may layer-specific data, local storage
+  put_object(file, "apps/jfsp/mapData.RData", "mleonawicz") # AWS storage
 }
