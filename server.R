@@ -6,39 +6,61 @@ mods <- paste0("mod_", tab_ids)
 shinyServer(function(input, output, session) {
   
   mapset_workspace <- reactive({
-    if(is.null(input$mapset) || input$mapset=="Alaska") NULL else "appData/mapData.RData"
+    if(is.null(input$mapset) || input$mapset=="AK") return()
+    file.path(dataloc, "mapData.RData")
   })
   
   rv <- reactiveValues(d=d, h=h, regions=regions, shp=shp)
   
-  load_file <- function(file){
-    load(file, envir=environment())
+  load_file <- function(file, source="local"){
+    progress <- shiny::Progress$new()
+    on.exit(progress$close())
+    if(source=="local"){
+      progress$set(message="Loading local data", value=1)
+      load(file, envir=environment())
+      progress$set(message="Loading local data", value=2)
+    }
+    if(source=="aws"){
+      progress$set(message="Fetching AWS data", value=1)
+      s3load(mapset_workspace(), envir=environment())
+      progress$set(message="Fetching AWS data", value=2)
+    }
     rv[["d"]] <- d
     rv[["h"]] <- h
     rv[["regions"]] <- regions
     rv[["shp"]] <- shp
   }
   
-  updateData <- reactive({ 
+  updateData <- reactive({
+    local_cache <- paste0("mapset_data_", input$mapset)
     if(is.null(mapset_workspace())){
       rv[["d"]] <- d
       rv[["h"]] <- h
       rv[["regions"]] <- regions
       rv[["shp"]] <- shp
+    } else if(exists(local_cache, envir=.GlobalEnv)){
+      rv[["d"]] <- get(local_cache, envir=.GlobalEnv)$d
+      rv[["h"]] <- get(local_cache, envir=.GlobalEnv)$h
+      rv[["regions"]] <- get(local_cache, envir=.GlobalEnv)$regions
+      rv[["shp"]] <- get(local_cache, envir=.GlobalEnv)$shp
     } else {
-      load_file(mapset_workspace())
+      load_file(mapset_workspace(), source="aws")
+      assign(local_cache, list(d=rv$d, h=rv$h, regions=rv$regions, shp=rv$shp), envir=.GlobalEnv)
     }
   })
   observe({ updateData() })
   
+  mapset_labs <- reactive({ names(mapsets)[match(input$mapset, mapsets)] })
+  
   output$mapset_regions <- renderUI({
     reg <- rv$regions
     mult <- FALSE
-    if(input$mapset!="Alaska"){
+    if(input$mapset!="AK"){
       reg <- c("", reg)
       mult <- TRUE
     }
-    selectInput("regions", input$mapset, choices=reg, selected=reg[1], multiple=mult, width="100%")
+    if(length(mapset_labs()))
+      selectInput("regions", mapset_labs(), choices=reg, selected=reg[1], multiple=mult, width="100%")
   })
   
   source("observers.R", local=TRUE) # map and region selectInput observers
@@ -123,15 +145,19 @@ shinyServer(function(input, output, session) {
   observe({
     x <- NULL
     success <- "Explore fire and vegetation tabs..."
-    if(is.null(input$rcps)) x <- "RCP selection missing"
-    if(is.null(input$gcms)) x <- "Model selection missing"
-    if(is.null(input$regions)) x <- "Fire Mgmt Zone selection missing"
-    if(is.null(input$veg)) x <- "Vegetation selection missing"
-    if(is.null(x)){
-      toastr_success(title="Data subset updated", success, timeOut=2500, preventDuplicates=TRUE)
-    } else {
-      toastr_error(title="Empty data set", x, timeOut=2500, preventDuplicates=TRUE)
-    }
+    input$rcps; input$gcms; input$regions; input$veg
+    isolate({
+      if(is.null(input$rcps)) x <- "RCP selection missing"
+      if(is.null(input$gcms)) x <- "Model selection missing"
+      if(!is.null(input$mapset) && input$mapset!="AK" && is.null(input$regions)) 
+        x <- paste("No", tolower(mapset_labs()), "selected")
+      if(is.null(input$veg)) x <- "Vegetation selection missing"
+      if(is.null(x) && all(input$regions %in% rv$regions)){
+        toastr_success(title="Data subset updated", success, timeOut=2500, preventDuplicates=TRUE)
+      } else {
+        toastr_error(title="Empty data set", x, timeOut=2500, preventDuplicates=TRUE)
+      }
+    })
   })
   
   d_ba <- reactive({ d1()[["Burn Area"]] })
