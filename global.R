@@ -15,12 +15,15 @@ library(ggplot2)
 library(ggpmisc)
 library(knitr)
 library(rmarkdown)
+library(aws.s3)
 
 cat("Total library load time:\n")
 print(proc.time() - ptm)
 
 ptm <- proc.time()
-load("appData/appData.RData")
+load("appData/appData.RData") # load any default local data sets
+dataloc <- "s3://mleonawicz/apps/jfsp" # specify location for any external data sets
+source("aws_key.R") # authentication to AWS
 cat("Total data load time:\n")
 print(proc.time() - ptm)
 
