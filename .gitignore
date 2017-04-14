@@ -2,4 +2,5 @@
 .Rhistory
 *.RData
 .Ruserdata
-jfsp-v*/
+jfsp-*/
+www/stat*png
