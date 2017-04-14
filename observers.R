@@ -27,7 +27,6 @@ observeEvent(input$regions, {
 observeEvent(input$Map_shape_click, {
   p <- input$Map_shape_click$id
   x <- input$regions
-  print(p)
   if(is.null(x) || x[1]!="AK"){
     p1 <- strsplit(p, "_")[[1]][2]
     proxy <- leafletProxy("Map")
