@@ -22,7 +22,7 @@ print(proc.time() - ptm)
 
 ptm <- proc.time()
 load("appData/appData.RData") # load any default local data sets
-dataloc <- "s3://mleonawicz/apps/jfsp" # specify location for any external data sets
+dataloc <- "s3://leonawicz/apps/jfsp" # specify location for any external data sets
 source("aws_key.R") # authentication to AWS
 cat("Total data load time:\n")
 print(proc.time() - ptm)

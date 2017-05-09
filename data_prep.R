@@ -4,7 +4,7 @@ library(aws.s3)
 
 # setup
 source("aws_key.R")
-bkt <- "mleonawicz"
+bkt <- "leonawicz"
 useAK <- TRUE # set to false for non-statewide AK mapsets
 
 mapsets <- c("Alaska"="AK", "Fire management zones"="FMZ")
@@ -87,5 +87,5 @@ if(useAK){
   objs <- c('d', 'h', 'regions', 'shp')
   file <- "appData/mapData.RData"
   save(list=objs, file=file) # may layer-specific data, local storage
-  put_object(file, "apps/jfsp/mapData.RData", "mleonawicz") # AWS storage
+  put_object(file, "apps/jfsp/mapData.RData", "leonawicz") # AWS storage
 }
